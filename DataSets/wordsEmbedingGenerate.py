@@ -40,8 +40,8 @@ def parser():
 
 
 def get_word_vector(model, palabra):
-    """  Función para obtener la word vector del modelo. Casa de no existir
-         palabra retorna el vector zero.
+    """  Función para obtener la word vector del modelo. Caso de no existir
+         un word vector, retorna el vector zero.
 
         args:
             model: Modelo pre entrenado.
