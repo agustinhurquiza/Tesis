@@ -68,10 +68,10 @@ def main():
     f = open(args.palabras, 'r')
     palabras = json.load(f)
     f.close()
-    resultado = []
+    resultado = {}
 
     for j, (i, palabra) in enumerate(palabras.items()):
-        resultado.append({str(i): get_word_vector(model, palabra).tolist()})
+        resultado[i] = get_word_vector(model, palabra).tolist()	
         print(str(j+1) + " de: " + str(len(palabras)))
 
     json.dump(resultado, codecs.open(args.arc_salida, 'w', encoding='utf-8'),
