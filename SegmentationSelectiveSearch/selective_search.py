@@ -293,7 +293,7 @@ def selective_search(image, colour_space="hsv", scale=20, measure=(1, 1, 1, 1),
     # Obtain initial regions.
     # Return image and initial segments.
     img_and_seg = initial_regions(image, scale)
-    print(len(np.unique(img_and_seg[:, :, 3])), "initial regions")
+    # print(len(np.unique(img_and_seg[:, :, 3])), "initial regions")
     R = extract_regions(img_and_seg)
     R = add_prop_reg(img_and_seg, R)
 
@@ -308,6 +308,9 @@ def selective_search(image, colour_space="hsv", scale=20, measure=(1, 1, 1, 1),
     while under_thres == False:
         # Get highest similarity.
         s = [x['sim'] for x in init_S]
+        if s == []:
+            break
+
         max_sim = max(s)
 
         if max_sim >= sim_threshold:

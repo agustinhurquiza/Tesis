@@ -11,7 +11,7 @@ NAME = "image1.jpg"
 
 img = imread(NAME)
 t1 = datetime.now()
-segment_mask, R = selective_search(img, scale=600, sim_threshold=0.77)
+segment_mask, R = selective_search(img, scale=320, sim_threshold=0.65)
 t2 = datetime.now()
 print('Time:', t2-t1)
 
