@@ -12,6 +12,7 @@ import argparse
 import os
 import json
 import codecs
+from sklearn.preprocessing import normalize
 from gensim.models.keyedvectors import KeyedVectors
 
 
@@ -39,7 +40,7 @@ def parser():
     return args
 
 
-def get_word_vector(model, palabra):
+def getWordVector(model, palabra):
     """  Función para obtener la word vector del modelo. Caso de no existir
          un word vector, retorna el vector zero.
 
@@ -71,16 +72,13 @@ def main():
     resultado = {}
 
     for j, (i, palabra) in enumerate(palabras.items()):
-        resultado[i] = get_word_vector(model, palabra).tolist()	
+        resultado[i] = normalize(getWordVector(model, palabra).reshape(1, -1),
+                                 axis=1)[0].tolist()
+
         print(str(j+1) + " de: " + str(len(palabras)))
 
     json.dump(resultado, codecs.open(args.arc_salida, 'w', encoding='utf-8'),
               separators=(',', ':'), indent=2)
-
-
-if __name__ == "__main__":
-    main()
-
 
 
 if __name__ == "__main__":

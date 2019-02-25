@@ -11,7 +11,7 @@ NAME = "image1.jpg"
 
 img = imread(NAME)
 t1 = datetime.now()
-segment_mask, R = selective_search(img, scale=320, sim_threshold=0.65)
+segment_mask, R = selective_search(img, scale=1, sim_threshold=0.99, colour_space="rgb")
 t2 = datetime.now()
 print('Time:', t2-t1)
 
@@ -19,7 +19,7 @@ print('Time:', t2-t1)
 fig = plt.figure()
 ax1 = plt.subplot(121)
 plt.imshow(img)
-
+print(len(R))
 for r in R:
     rect = Rectangle((r['x_min'], r['y_min']), r['width'], r['height'],
                      fill=False, color='red', linewidth=1.5)

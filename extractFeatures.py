@@ -11,7 +11,11 @@ from glob import glob
 import argparse
 import json
 import cv2
-from random import choices
+import tensorflow as tf
+import numpy as np
+from random import choices, randint
+from sklearn.preprocessing import normalize
+from keras.applications.inception_resnet_v2 import InceptionResNetV2
 
 from SegmentationSelectiveSearch.selective_search import selective_search
 
@@ -81,6 +85,35 @@ def iou(boxA, boxB):
     return iou
 
 
+def appendValue(X, Y, box, cls, img, model, w2vec):
+    """ Agrega los features y los labels para un boundig box.
+        Args:
+            X (list): Lista de features.
+            Y (list): Lista de label.
+            box (list): Bounding box.
+            cls (String): Clase que pertenece el boundig box.
+            img (np.array): Imagen completa.
+            model (keras.model): Modelo para extraer los features.
+            w2vec (dict): Lista Word2vec para cada clase.
+
+    """
+    x1 = box[0]
+    x2 = box[2]
+    y1 = box[1]
+    y2 = box[3]
+
+    x = cv2.resize(img[y1:y2, x1:x2], (NCOLS, NROWS)).reshape(1,NCOLS, NROWS, 3)
+    x = normalize(model.predict(x).reshape(1, -1), axis=1)[0].tolist()
+    X.append(x)
+
+    if cls != '-1':
+        y = w2vec[cls]
+        Y.append(y)
+    else:
+        y = np.zeros([300]).tolist()
+        Y.append(y)
+
+
 def parser():
     """ Funcion encargada de solicitar los argumentos de entrada.
 
@@ -97,8 +130,15 @@ def parser():
     parser.add_argument('-b', '--bbox', type=str, required=True,
                         help="""Archivo donde se encuentran las bounding box.""")
 
-    parser.add_argument('-s', '--arc_salida', type=str, required=True,
-                        help="""Archivo de salida.""")
+    parser.add_argument('-s', '--dir_salida', type=str, required=True,
+                        help="""Directorio de salida.""")
+
+    parser.add_argument('-n', '--name', type=str, required=True,
+                        help="""Nombre del data set.""")
+
+    parser.add_argument('-w', '--word', type=str, required=True,
+                        help="""Archivo donde se encuentra los word2vector
+                                de las clases.""")
 
     args = parser.parse_args()
 
@@ -109,53 +149,65 @@ def main():
     args = parser()
     dir = args.dir
     fileB = args.bbox
-    fileO = args.arc_salida
+    fileW = args.word
+    dirO = args.dir_salida
+    nameData = args.name
+
+    global NCOLS, NROWS, FEATURE_SIZE
+
+    NCOLS = 299
+    NROWS = 299
+    FEATURE_SIZE = 1536
+    IOU = 0.5
+    BACKGROUND = 0.2
+    IGNORE = 0.8
+    SCALE = 1
+    STHSLD = 0.99
+
+    X = []
+    Y = []
 
     images = [{f.split('/')[-1]: cv2.imread(f)} for f in glob(dir + '/*.jpg')]
     boundboxsTruth = json.load(open(fileB, 'r'))
-    result = []
+    w2vec = json.load(open(fileW))
+    model = InceptionResNetV2(include_top=False, weights='imagenet',
+                              pooling='avg')
 
     for img in images:
-        background = []
-        newBoxs = []
         name = list(img.keys())[0]
         img = list(img.values())[0]
         size = img.shape[0] * img.shape[1]
         boxs = boxsByName(boundboxsTruth, name)
 
-        _, R = selective_search(img, colour_space='rgb', scale=320,
-                                sim_threshold=0.85)
+        _, R = selective_search(img, colour_space='rgb', scale=SCALE,
+                                sim_threshold=STHSLD)
 
-        proposals = [process(r) for r in R if area(r) < (0.6*size)]
+        proposals = [process(r) for r in R if area(r) < (IGNORE*size)]
+
+        for bb in boxs:
+            appendValue(X, Y, bb['box'], str(bb['class']), img, model, w2vec)
 
         for bb in proposals:
-            ious = [iou(bb, b['box']) for b in boxs]
+            ious = [(i, iou(bb, b['box'])) for i, b in enumerate(boxs)]
+            ious.sort(key=lambda x: x[1], reverse=True)
+            
+            if ious[0][1] > IOU:
+                cls =  str(boxs[ious[0][0]]['class'])
+                appendValue(X, Y, bb, cls, img, model, w2vec)
 
-            try:
-                item = next(x[0] for x in enumerate(ious) if x[1] > 0.5)
-                newBoxs.append({'box': list(map(int, bb)),
-                                'class': boxs[item]['class']})
-                continue
-            except:
-                pass
+            elif ious[0][1] < BACKGROUND:
+                appendValue(X, Y, bb, '-1', img, model, w2vec)
 
-            try:
-                item = next(x[0] for x in enumerate(ious) if 0 < x[1] < 0.2)
-                newBoxs.append({'box': list(map(int, bb)), 'class': -1})
-                continue
-            except:
-                pass
+            elif ious[0][1] == 0 and randint(0,3):
+                appendValue(X, Y, bb, '-1', img, model, w2vec)
 
-            background.append({'box': list(map(int, bb)), 'class': -1})
+    f = open(dirO + nameData + '-feature.json', 'w')
+    f.write(json.dumps(X))
+    f.close()
 
-        if len(background) > 0:
-            background = choices(background, k=int(0.8 * len(background)))
-
-        result.append({'img_name': name, 'boxs': boxs + newBoxs + background})
-
-    file = open(fileO, 'w')
-    file.write(json.dumps(result))
-    file.close()
+    f = open(dirO + nameData + '-label.json', 'w')
+    f.write(json.dumps(Y))
+    f.close()
 
 
 if __name__ == "__main__":

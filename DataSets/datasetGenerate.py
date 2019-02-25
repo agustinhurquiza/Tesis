@@ -303,24 +303,24 @@ def main():
     for i in range(NUM_TEST):
         cv2.imwrite(PATH_I + 'test/cifar-zsd-test'+str(i)+'.jpg', X_test[i])
 
-    file = open(PATH_C + 'class-cifar-zsd.json', 'w')
+    file = open(PATH_C + 'cifar-zsd-class.json', 'w')
     file.write(json.dumps(LABELS, separators=(',\n ', ': ')))
     file.close()
 
-    file = open(PATH_C + 'seen-cifar-zsd.json', 'w')
+    file = open(PATH_C + 'cifar-zsd-seen.json', 'w')
     file.write(json.dumps({str(key): LABELS.pop(key) for key in CLASES_VISTA}, 
 			  separators=(',\n ', ': ')))
     file.close()
 
-    file = open(PATH_C + 'unseen-cifar-zsd.json', 'w')
+    file = open(PATH_C + 'cifar-zsd-unseen.json', 'w')
     file.write(json.dumps(LABELS, separators=(',\n ', ': ')))
     file.close()
 
-    file = open(PATH_B + 'boundbox-cifar-zsd-train.json', 'w')
+    file = open(PATH_B + 'cifar-zsd-train.json', 'w')
     file.write(json.dumps(Y_entr))
     file.close()
 
-    file = open(PATH_B + 'boundbox-cifar-zsd-test.json', 'w')
+    file = open(PATH_B + 'cifar-zsd-test.json', 'w')
     file.write(json.dumps(Y_test))
     file.close()
 
