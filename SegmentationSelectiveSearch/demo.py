@@ -20,6 +20,7 @@ fig = plt.figure()
 ax1 = plt.subplot(121)
 plt.imshow(img)
 print(len(R))
+
 for r in R:
     rect = Rectangle((r['x_min'], r['y_min']), r['width'], r['height'],
                      fill=False, color='red', linewidth=1.5)

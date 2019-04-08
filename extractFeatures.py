@@ -11,16 +11,16 @@ from glob import glob
 import argparse
 import json
 import cv2
-import tensorflow as tf
 import numpy as np
-from random import choices, randint
+from random import randint
 from sklearn.preprocessing import normalize
 from keras.applications.inception_resnet_v2 import InceptionResNetV2
 
+from auxiliares import save, load, iou
 from SegmentationSelectiveSearch.selective_search import selective_search
 
 
-def process(r):
+def procesar(r):
     """ Funcion formatear los bounding box en [x1, y1, x2, y2].
         Args:
             r (dict): Bounding box sin formatear.
@@ -64,27 +64,6 @@ def boxsByName(boxs, name):
     return boxs
 
 
-def iou(boxA, boxB):
-    """ Funcion encargada de calcular Intersection over Union de dos bounding
-         boxs.
-        Returns:
-            <float>: 0 <= iou <= 1.
-    """
-    xA = max(boxA[0], boxB[0])
-    yA = max(boxA[1], boxB[1])
-    xB = min(boxA[2], boxB[2])
-    yB = min(boxA[3], boxB[3])
-
-    interArea = max(0, xB - xA + 1) * max(0, yB - yA + 1)
-
-    boxAArea = (boxA[2] - boxA[0] + 1) * (boxA[3] - boxA[1] + 1)
-    boxBArea = (boxB[2] - boxB[0] + 1) * (boxB[3] - boxB[1] + 1)
-
-    iou = interArea / float(boxAArea + boxBArea - interArea)
-
-    return iou
-
-
 def appendValue(X, Y, box, cls, img, model, w2vec):
     """ Agrega los features y los labels para un boundig box.
         Args:
@@ -102,7 +81,7 @@ def appendValue(X, Y, box, cls, img, model, w2vec):
     y1 = box[1]
     y2 = box[3]
 
-    x = cv2.resize(img[y1:y2, x1:x2], (NCOLS, NROWS)).reshape(1,NCOLS, NROWS, 3)
+    x = cv2.resize(img[y1:y2, x1:x2], (NCOLS, NFILS)).reshape(1, NCOLS, NFILS, 3)
     x = normalize(model.predict(x).reshape(1, -1), axis=1)[0].tolist()
     X.append(x)
 
@@ -150,64 +129,66 @@ def main():
     dir = args.dir
     fileB = args.bbox
     fileW = args.word
-    dirO = args.dir_salida
+    dirS = args.dir_salida
     nameData = args.name
 
-    global NCOLS, NROWS, FEATURE_SIZE
+    global NCOLS, NFILS
 
+    # Tamaño de las imagnes de la entrada del modelo.
     NCOLS = 299
-    NROWS = 299
-    FEATURE_SIZE = 1536
+    NFILS = 299
+    # Intersecion que debe tener una propuesta con un box.
     IOU = 0.5
+    # Intersecion para considerar una propuesta como background.
     BACKGROUND = 0.2
-    IGNORE = 0.8
-    SCALE = 1
+    # Tamaño maximo de las propuetas, en % del tamaño de la imagen.
+    IGNORAR = 0.8
+    # Parametros de selective search.
+    SCALA = 1
     STHSLD = 0.99
 
     X = []
     Y = []
 
-    images = [{f.split('/')[-1]: cv2.imread(f)} for f in glob(dir + '/*.jpg')]
-    boundboxsTruth = json.load(open(fileB, 'r'))
+    boundboxs = json.load(open(fileB, 'r'))
     w2vec = json.load(open(fileW))
-    model = InceptionResNetV2(include_top=False, weights='imagenet',
-                              pooling='avg')
+    modelo = InceptionResNetV2(include_top=False, weights='imagenet',
+                               pooling='avg')
 
-    for img in images:
-        name = list(img.keys())[0]
-        img = list(img.values())[0]
-        size = img.shape[0] * img.shape[1]
-        boxs = boxsByName(boundboxsTruth, name)
+    for k, img in enumerate(glob(dir + '/*.jpg')):
+        print("Imagenes procesadas: " + str(k+1))
 
-        _, R = selective_search(img, colour_space='rgb', scale=SCALE,
+        name = img.split('/')[-1]
+        img = cv2.imread(img)
+        tam = img.shape[0] * img.shape[1]
+        boxs = boxsByName(boundboxs, name)
+
+        _, R = selective_search(img, colour_space='rgb', scale=SCALA,
                                 sim_threshold=STHSLD)
 
-        proposals = [process(r) for r in R if area(r) < (IGNORE*size)]
+        propuestas = [procesar(r) for r in R if area(r) < (IGNORAR*tam)]
 
         for bb in boxs:
-            appendValue(X, Y, bb['box'], str(bb['class']), img, model, w2vec)
+            appendValue(X, Y, bb['box'], str(bb['class']), img, modelo, w2vec)
 
-        for bb in proposals:
+        for bb in propuestas:
             ious = [(i, iou(bb, b['box'])) for i, b in enumerate(boxs)]
             ious.sort(key=lambda x: x[1], reverse=True)
-            
+
             if ious[0][1] > IOU:
-                cls =  str(boxs[ious[0][0]]['class'])
-                appendValue(X, Y, bb, cls, img, model, w2vec)
+                cls = str(boxs[ious[0][0]]['class'])
+                appendValue(X, Y, bb, cls, img, modelo, w2vec)
 
             elif ious[0][1] < BACKGROUND:
-                appendValue(X, Y, bb, '-1', img, model, w2vec)
+                appendValue(X, Y, bb, '-1', img, modelo, w2vec)
 
-            elif ious[0][1] == 0 and randint(0,3):
-                appendValue(X, Y, bb, '-1', img, model, w2vec)
+            elif ious[0][1] == 0 and randint(0, 3):
+                appendValue(X, Y, bb, '-1', img, modelo, w2vec)
 
-    f = open(dirO + nameData + '-feature.json', 'w')
-    f.write(json.dumps(X))
-    f.close()
-
-    f = open(dirO + nameData + '-label.json', 'w')
-    f.write(json.dumps(Y))
-    f.close()
+    X = np.array(X)
+    Y = np.array(Y)
+    save(dirO + nameData + '-X.mat', X)
+    save(dirO + nameData + '-Y.mat', Y)
 
 
 if __name__ == "__main__":
