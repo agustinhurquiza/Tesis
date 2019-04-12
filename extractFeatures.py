@@ -11,6 +11,7 @@ from glob import glob
 import argparse
 import json
 import cv2
+import math
 import numpy as np
 from random import randint
 from sklearn.preprocessing import normalize
@@ -59,6 +60,7 @@ def boxsByName(boxs, name):
         Returns:
             [dict]: Conjunto de bounding box asociado a la imagen..
     """
+
     boxs = list(filter(lambda x: x['img_name'] == name, boxs))[0]['boxs']
 
     return boxs
@@ -130,7 +132,7 @@ def main():
     fileB = args.bbox
     fileW = args.word
     dirS = args.dir_salida
-    nameData = args.name
+    nombreData = args.name
 
     global NCOLS, NFILS
 
@@ -146,6 +148,10 @@ def main():
     # Parametros de selective search.
     SCALA = 1
     STHSLD = 0.99
+    # Probabilidad de backgraund se agrege (1/PROB).
+    PROB = 3
+    # Maximo de imagenes procesadas sin guardar.
+    MAXS = 5000
 
     X = []
     Y = []
@@ -157,11 +163,22 @@ def main():
 
     for k, img in enumerate(glob(dir + '/*.jpg')):
         print("Imagenes procesadas: " + str(k+1))
-
+	
+        if k % MAXS == 0 and k != 0:
+            X = np.array(X)
+            Y = np.array(Y)
+            save(dirS + nombreData + '-' + str(int(k/MAXS)) + '-X.mat', X)
+            save(dirS + nombreData + '-' + str(int(k/MAXS)) + '-Y.mat', Y)
+            X, Y = [], []             
+    
         name = img.split('/')[-1]
         img = cv2.imread(img)
         tam = img.shape[0] * img.shape[1]
-        boxs = boxsByName(boundboxs, name)
+        
+        try:
+            boxs = boxsByName(boundboxs, name)
+        except (IndexError, cv2.error):
+            continue
 
         _, R = selective_search(img, colour_space='rgb', scale=SCALA,
                                 sim_threshold=STHSLD)
@@ -182,13 +199,14 @@ def main():
             elif ious[0][1] < BACKGROUND:
                 appendValue(X, Y, bb, '-1', img, modelo, w2vec)
 
-            elif ious[0][1] == 0 and randint(0, 3):
+            elif ious[0][1] == 0 and randint(0, PROB):
                 appendValue(X, Y, bb, '-1', img, modelo, w2vec)
-
-    X = np.array(X)
-    Y = np.array(Y)
-    save(dirO + nameData + '-X.mat', X)
-    save(dirO + nameData + '-Y.mat', Y)
+   
+    if X != []:
+        X = np.array(X)
+        Y = np.array(Y)
+        save(dirS + nombreData + '-' + str(int(math.ceil(k/MAXS))) + '-X.mat', X)
+        save(dirS + nombreData + '-' + str(int(math.ceil(k/MAXS))) + '-Y.mat', Y)
 
 
 if __name__ == "__main__":
