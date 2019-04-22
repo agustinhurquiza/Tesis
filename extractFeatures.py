@@ -82,8 +82,12 @@ def appendValue(X, Y, box, cls, img, model, w2vec):
     x2 = box[2]
     y1 = box[1]
     y2 = box[3]
-
-    x = cv2.resize(img[y1:y2, x1:x2], (NCOLS, NFILS)).reshape(1, NCOLS, NFILS, 3)
+    
+    try:
+        x = cv2.resize(img[y1:y2, x1:x2], (NCOLS, NFILS)).reshape(1, NCOLS, NFILS, 3)
+    except:
+        return
+   
     x = normalize(model.predict(x).reshape(1, -1), axis=1)[0].tolist()
     X.append(x)
 
@@ -163,18 +167,18 @@ def main():
 
     for k, img in enumerate(glob(dir + '/*.jpg')):
         print("Imagenes procesadas: " + str(k+1))
-	
+
         if k % MAXS == 0 and k != 0:
             X = np.array(X)
             Y = np.array(Y)
             save(dirS + nombreData + '-' + str(int(k/MAXS)) + '-X.mat', X)
             save(dirS + nombreData + '-' + str(int(k/MAXS)) + '-Y.mat', Y)
-            X, Y = [], []             
-    
+            X, Y = [], []
+
         name = img.split('/')[-1]
         img = cv2.imread(img)
         tam = img.shape[0] * img.shape[1]
-        
+
         try:
             boxs = boxsByName(boundboxs, name)
         except (IndexError, cv2.error):
@@ -201,7 +205,7 @@ def main():
 
             elif ious[0][1] == 0 and randint(0, PROB):
                 appendValue(X, Y, bb, '-1', img, modelo, w2vec)
-   
+
     if X != []:
         X = np.array(X)
         Y = np.array(Y)
