@@ -21,36 +21,6 @@ from auxiliares import save, load, iou
 from SegmentationSelectiveSearch.selective_search import selective_search
 
 
-def procesar(r):
-    """ Funcion formatear los bounding box en [x1, y1, x2, y2].
-        Args:
-            r (dict): Bounding box sin formatear.
-        Returns:
-            [int]: Las cuatro cordenadas del bounding box.
-    """
-    x1 = r['x_min']
-    y1 = r['y_min']
-    x2 = r['width'] + x1
-    y2 = r['height'] + y1
-
-    return [x1, y1, x2, y2]
-
-
-def area(r):
-    """ Funcion encargada de calcular el area de un bounding box.
-        Args:
-            r (dict): Bounding box.
-        Returns:
-            float: Area del bounding box.
-    """
-    x1 = r['x_min']
-    y1 = r['y_min']
-    x2 = r['width'] + x1
-    y2 = r['height'] + y1
-
-    return (x2-x1)*(y2-y1)
-
-
 def boxsByName(boxs, name):
     """ Devuelve una lista de boundig box asociado a una imagen.
         Args:

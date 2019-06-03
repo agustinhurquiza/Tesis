@@ -38,6 +38,39 @@ def iou(boxA, boxB):
 
     boxAArea = (boxA[2] - boxA[0] + 1) * (boxA[3] - boxA[1] + 1)
     boxBArea = (boxB[2] - boxB[0] + 1) * (boxB[3] - boxB[1] + 1)
+    iou = interArea / float(boxAArea + boxBArea - interArea)
+
+    return iou
+
+
+def procesar(r):
+    """ Funcion formatear los bounding box en [x1, y1, x2, y2].
+        Args:
+            r (dict): Bounding box sin formatear.
+        Returns:
+            [int]: Las cuatro cordenadas del bounding box.
+    """
+    x1 = r['x_min']
+    y1 = r['y_min']
+    x2 = r['width'] + x1
+    y2 = r['height'] + y1
+
+    return [x1, y1, x2, y2]
+
+
+def area(r):
+    """ Funcion encargada de calcular el area de un bounding box.
+        Args:
+            r (dict): Bounding box.
+        Returns:
+            float: Area del bounding box.
+    """
+    x1 = r['x_min']
+    y1 = r['y_min']
+    x2 = r['width'] + x1
+    y2 = r['height'] + y1
+
+    return (x2-x1)*(y2-y1)
 
     iou = interArea / float(boxAArea + boxBArea - interArea)
 
