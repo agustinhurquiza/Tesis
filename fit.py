@@ -41,9 +41,6 @@ def parser():
     parser.add_argument('-s', '--fseen', type=str, required=True,
                         help="""Archivo donde se encuentran las clases vistas.""")
 
-    parser.add_argument('-u', '--funseen', type=str, required=True,
-                        help="""Archivo donde se encuentran las clases invisibles.""")
-
     parser.add_argument('-f', '--fileo', type=str, required=True,
                         help="""Archivo de salida del modelo.""")
 
@@ -85,12 +82,10 @@ def main():
     DIRDATA = args.dirdata
     FILEWORD = args.fword
     FILESEEN = args.fseen
-    FILEUNSEEN = args.funseen
     FILEO = args.fileo
     NEPOCS = args.nepocs
 
     seen = json.load(open(FILESEEN))
-    unseen = json.load(open(FILEUNSEEN))
     words = json.load(open(FILEWORD))
 
     resNet = InceptionResNetV2(include_top=False, weights='imagenet', pooling='avg')
@@ -109,7 +104,6 @@ def main():
     X = X[items]
     Y = Y[items]
 
-    unseen = [(k, v) for k, v in words.items() if k in unseen.keys()]
     W_Clases = [arrayToTensor(v, 'float32') for k, v in words.items() if k in seen.keys()]
 
     inputs = Input(shape=(INSIZE,))
