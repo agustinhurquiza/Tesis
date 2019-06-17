@@ -1,5 +1,9 @@
 import numpy as np
 import scipy.io as sio
+import cv2
+from scipy.spatial.distance import cosine
+from sklearn.preprocessing import normalize
+from nms.nms import boxes
 
 def save(filename, mat):
     """ saves data in binary format
@@ -75,3 +79,51 @@ def area(r):
     iou = interArea / float(boxAArea + boxBArea - interArea)
 
     return iou
+
+
+def predictBox(img, R, unseen, model, resNet, NCOLS=299, NFILS=299, NMSIGNORE=0.2):
+    """ Esta funcion obtiene predice las clases al que pertence una lista de
+        bounding, ademas se queda con las mejores propuestas. Es responsabiliad
+        del usario definir  Y NMSIGNORE.
+
+        Args:
+            img (np.array): Imagen a la cual se le quiere obtener las propuesta.
+            R (np.array): Todas las propuestas de la imagen.
+            unseen (List): Lista de las clases no vistas.
+            model (Keras.model): Modelo pre entrenado.
+            resNet (Keras.model): Modelo para extraer features de una imagen.
+            NCOLS (int): Tamaño de la imagen.
+            NFILS (int): Tamaño de la imagen.
+            NMSIGNORE (float): Paramatro utilizado para elimianr propuestas similares.
+
+        Returns:
+            box_p (List): Una lista con las mejores propuestas y a la clase que
+                          pertence cada boundingbox.
+    """
+
+    grupos_cls = [[] for _ in range(len(unseen))]
+    for bb in R:
+        # Pipeline para cada boundingbox propuesta.
+        x1, x2, y1, y2 = bb[0], bb[2], bb[1], bb[3]
+        x = cv2.resize(img[y1:y2, x1:x2], (NCOLS, NFILS)).reshape(1, NCOLS, NFILS, 3)
+        x = resNet.predict(x).reshape(1, -1)
+        x = normalize(x, axis=1)
+        x = model.predict(x)
+        # Descrimina al grupo que pertence la bb segun la similutd coseno.
+        x = np.array([2 - cosine(x, cls[1]) for cls in unseen])
+        grupos_cls[np.argmax(x)].append((np.max(x), bb))
+
+    box_p = []
+    for k, grupo in enumerate(grupos_cls):
+        # Non-maximal suppression. Solo quedan las mejores propuestas.
+        nms = boxes([i[1] for i in grupo], [i[0] for i in grupo])
+        # Elimina las bb similares a la mejor.
+        while grupo != [] and nms != []:
+            idx = nms[0]
+            elm = grupo[idx][1]
+            idxs = [k for k, val in enumerate(grupo) if iou(val[1], elm) > NMSIGNORE]
+            gruop = [item for i, item in enumerate(grupo) if not i in idxs]
+            nms = [item for item in nms if not item in idxs]
+            box_p.append((elm, k))
+
+    return box_p

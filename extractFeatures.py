@@ -52,12 +52,12 @@ def appendValue(X, Y, box, cls, img, model, w2vec):
     x2 = box[2]
     y1 = box[1]
     y2 = box[3]
-    
+
     try:
         x = cv2.resize(img[y1:y2, x1:x2], (NCOLS, NFILS)).reshape(1, NCOLS, NFILS, 3)
     except:
         return
-   
+
     x = normalize(model.predict(x).reshape(1, -1), axis=1)[0].tolist()
     X.append(x)
 
