@@ -81,7 +81,7 @@ def area(r):
     return iou
 
 
-def predictBox(img, R, unseen, model, resNet, NCOLS=299, NFILS=299, NMSIGNORE=0.2):
+def predictBox(img, R, unseen, model, resNet, NCOLS=299, NFILS=299):
     """ Esta funcion obtiene predice las clases al que pertence una lista de
         bounding, ademas se queda con las mejores propuestas. Es responsabiliad
         del usario definir  Y NMSIGNORE.
@@ -94,7 +94,6 @@ def predictBox(img, R, unseen, model, resNet, NCOLS=299, NFILS=299, NMSIGNORE=0.
             resNet (Keras.model): Modelo para extraer features de una imagen.
             NCOLS (int): Tamaño de la imagen.
             NFILS (int): Tamaño de la imagen.
-            NMSIGNORE (float): Paramatro utilizado para elimianr propuestas similares.
 
         Returns:
             box_p (List): Una lista con las mejores propuestas y a la clase que
@@ -115,15 +114,41 @@ def predictBox(img, R, unseen, model, resNet, NCOLS=299, NFILS=299, NMSIGNORE=0.
 
     box_p = []
     for k, grupo in enumerate(grupos_cls):
-        # Non-maximal suppression. Solo quedan las mejores propuestas.
-        nms = boxes([i[1] for i in grupo], [i[0] for i in grupo])
-        # Elimina las bb similares a la mejor.
-        while grupo != [] and nms != []:
-            idx = nms[0]
-            elm = grupo[idx][1]
-            idxs = [k for k, val in enumerate(grupo) if iou(val[1], elm) > NMSIGNORE]
-            gruop = [item for i, item in enumerate(grupo) if not i in idxs]
-            nms = [item for item in nms if not item in idxs]
-            box_p.append((elm, k))
+        if grupo == []:
+            continue
+        # Non maximal supression.
+        idxs = boxes([i[1] for i in grupo], [i[0] for i in grupo])
+        grupo = np.array([[i[1], i[0]]for i in grupo])
+        box_p += [(elem[0], k, elem[1]) for elem in grupo[idxs]]
 
     return box_p
+
+
+def drawRectangle(img, boxs_t, boxs_p, unseenName):
+    """ Esta funicion dibuja los rectangulos en la imagen
+
+        Args:
+            img (np.array): Imagen original.
+            boxs_t (List): Bounding box verdaderos.
+            boxs_p (List): Bounding box propuestos.
+            unseen (List): Clases no vistas.
+        Returns:
+            img_t, img_p: Imagenes con los rectangulos ya dibujados.
+    """
+    img_p = img.copy()
+    img_t = img.copy()
+    for b in boxs_t:
+        clas = unseenName[str(b[1])]
+        x1, x2, y1, y2 = b[0][0], b[0][2], b[0][1], b[0][3]
+        cv2.rectangle(img_t, (x1, y1), (x2, y2), (0, 255, 0), 2)
+        cv2.putText(img_t, clas, (x1+10, y1+10), cv2.FONT_HERSHEY_TRIPLEX, 0.3,
+                    (0, 255, 0), 1)
+
+    for b in boxs_p:
+        clas = unseenName[str(b[1])]
+        x1, x2, y1, y2 = b[0][0], b[0][2], b[0][1], b[0][3]
+        cv2.rectangle(img_p, (x1, y1), (x2, y2), (255, 0, 0), 2)
+        cv2.putText(img_p, clas, (x1+10, y1+10), cv2.FONT_HERSHEY_TRIPLEX, 0.3,
+                    (255, 0, 0), 1)
+
+    return img_t, img_p

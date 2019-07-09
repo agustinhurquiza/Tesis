@@ -18,12 +18,11 @@ from keras.applications.inception_resnet_v2 import InceptionResNetV2
 from SegmentationSelectiveSearch.selective_search import selective_search
 
 from model import ModelBase
-from auxiliares import area, procesar, iou, save, predictBox
+from auxiliares import area, procesar, iou, save, predictBox, drawRectangle
 
 
 def parser():
     """ Funcion encargada de solicitar los argumentos de entrada.
-
         Returns:
             <class 'argparse.Namespace'>: Argumentos ingresados por el usuario.
     """
@@ -46,7 +45,7 @@ def parser():
     parser.add_argument('-fm', '--fmodel', type=str, required=True,
                         help="""Arvhivo donde se ecnuentra el modelo pre-entrenado.""")
 
-    parser.add_argument('-s', '--save', type=bool, required=True,
+    parser.add_argument('-s', '--save', type=int, required=True,
                         help="""True se guarda las imagenes de salida, False solo se muestran.""")
 
     args = parser.parse_args()
@@ -54,43 +53,10 @@ def parser():
     return args
 
 
-def drawRectangle(img, boxs_t, boxs_p, unseenName):
-    """ Esta funicion dibuja los rectangulos en la imagen
-
-        Args:
-            img (np.array): Imagen original.
-            boxs_t (List): Bounding box verdaderos.
-            boxs_p (List): Bounding box propuestos.
-            unseen (List): Clases no vistas.
-        Returns:
-            img_t, img_p: Imagenes con los rectangulos ya dibujados.
-    """
-    img_p = img.copy()
-    img_t = img.copy()
-    for b in boxs_t:
-        clas = unseenName[str(b[1])]
-        x1, x2, y1, y2 = b[0][0], b[0][2], b[0][1], b[0][3]
-        cv2.rectangle(img_t, (x1, y1), (x2, y2), (0, 255, 0), 2)
-        cv2.putText(img_t, clas, (x1+10, y1+10), cv2.FONT_HERSHEY_TRIPLEX, 0.3,
-                    (0, 255, 0), 1)
-
-    for b in boxs_p:
-        clas = unseenName[str(b[1])]
-        x1, x2, y1, y2 = b[0][0], b[0][2], b[0][1], b[0][3]
-        cv2.rectangle(img_p, (x1, y1), (x2, y2), (255, 0, 0), 2)
-        cv2.putText(img_p, clas, (x1+10, y1+10), cv2.FONT_HERSHEY_TRIPLEX, 0.3,
-                    (255, 0, 0), 1)
-
-    return img_t, img_p
-
-
 def main():
-    global NCOLS, NFILS, NMSIGNORE
     SCALA = 1 # TUNING maximas propuestas.
     STHSLD = 0.99 # TUNING maximas propuestas.
-    IGNORAR = 0.8 # TUNING.
-    NMSIGNORE = 0.2 # TUNING.
-    NCOLS, NFILS = 299, 299
+    IGNORAR = 0.85 # TUNING.
 
     args = parser()
     FILEWORD = args.fword

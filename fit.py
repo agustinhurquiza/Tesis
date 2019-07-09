@@ -14,6 +14,7 @@ import json
 from tensorflow import convert_to_tensor as arrayToTensor
 from auxiliares import load
 from model import ModelBase
+import matplotlib.pyplot as plt
 
 
 def parser():
@@ -76,10 +77,23 @@ def main():
 
     W_Clases = [arrayToTensor(v, 'float32') for k, v in words.items() if k in seen.keys()]
 
-    model = ModelBase(W_Clases)
-    model.fit(X, Y, epochs=NEPOCS)
-    model.save(FILEO)
+    legend = []
+    for lr in range(1, 8):
+        lr = 10**-lr
+        model = ModelBase(W_Clases, lr=lr)
+        history = model.fit(X, Y, epochs=NEPOCS)
+        model.save(FILEO+'-lr-'+str(lr)+'.h5')
 
+        plt.plot(history.history['loss'])
+        plt.plot(history.history['categorical_accuracy'])
+        legend += ['Loss-'+str(lr), 'CAc'+ str(lr)]
+        print("Finalizo de entrenar con lr:" + str(lr) + "\n\n\n\n")
+
+    plt.legend(legend)
+    plt.title('Loss VS Categorical Accuracy')
+    plt.ylabel('Value')
+    plt.xlabel('Epoch')
+    plt.savefig('graph_LvsCA.png')
     print("Finished training the model.")
 
 

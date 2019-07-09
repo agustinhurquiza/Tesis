@@ -12,6 +12,7 @@ from keras.models import Model
 from keras.losses import cosine_proximity
 from keras.metrics import categorical_accuracy as cacc
 import keras.backend as K
+from keras.optimizers import Adam
 from tensorflow import float32
 
 
@@ -33,13 +34,13 @@ def custom_loss(W_Clases):
             Sij = K.abs(cosine_proximity(y_pred, w_clase))
             loss += K.maximum(K.cast(0, float32), K.cast(1, float32) - Sii + Sij)
 
-        loss -= 1.0
+        loss -= 6.0
         return loss
 
     return lossf
 
 
-def ModelBase(W_Clases=[], OUTSIZE=300, INSIZE=1536, compile=True):
+def ModelBase(W_Clases=[], OUTSIZE=300, INSIZE=1536, compile=True, lr=0.01):
     """ Esta funicion genera el modelo. ModelBase consta de una sola capa full
         connected del tamaño de las features a el tamaño de word2vec.
 
@@ -53,13 +54,14 @@ def ModelBase(W_Clases=[], OUTSIZE=300, INSIZE=1536, compile=True):
         Returns:
             model: Modelo keras.
     """
+
+    adam = Adam(lr=lr)
     inputs = Input(shape=(INSIZE,))
 
     x = Dense(OUTSIZE, activation='relu')(inputs)
 
     model = Model(inputs=inputs, outputs=x)
     if compile:
-        model.compile(optimizer='adam', loss=custom_loss(W_Clases), metrics=[cacc])
+        model.compile(optimizer=adam, loss=custom_loss(W_Clases), metrics=[cacc])
     model.summary()
-
     return model
