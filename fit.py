@@ -77,23 +77,35 @@ def main():
 
     W_Clases = [arrayToTensor(v, 'float32') for k, v in words.items() if k in seen.keys()]
 
-    legend = []
+    legendLoss = []
+    legendMetric = []
+    pltL = []
+    pltM = []
     for lr in range(1, 8):
         lr = 10**-lr
         model = ModelBase(W_Clases, lr=lr)
         history = model.fit(X, Y, epochs=NEPOCS)
         model.save(FILEO+'-lr-'+str(lr)+'.h5')
 
-        plt.plot(history.history['loss'])
-        plt.plot(history.history['categorical_accuracy'])
-        legend += ['Loss-'+str(lr), 'CAc'+ str(lr)]
+        pltL.append(history.history['loss'])
+        pltM.append(history.history['categorical_accuracy'])
+        legendLoss += ['Loss-'+str(lr)]
+        legendMetric += ['CAc'+ str(lr)]
         print("Finalizo de entrenar con lr:" + str(lr) + "\n\n\n\n")
 
-    plt.legend(legend)
-    plt.title('Loss VS Categorical Accuracy')
+    plt.subplot(2, 1, 1)
+    plt.title('Loss and Categorical Accuracy')
+    plt.plot(pltL)
+    plt.legend(legendLoss)
+    plt.ylabel('Value')
+
+    plt.subplot(2, 1, 2)
+    plt.plot(pltM)
+    plt.legend(legendMetric)
     plt.ylabel('Value')
     plt.xlabel('Epoch')
-    plt.savefig('graph_LvsCA.png')
+
+    plt.savefig('graph_loss_Acc.png')
     print("Finished training the model.")
 
 

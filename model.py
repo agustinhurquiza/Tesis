@@ -34,7 +34,7 @@ def custom_loss(W_Clases):
             Sij = K.abs(cosine_proximity(y_pred, w_clase))
             loss += K.maximum(K.cast(0, float32), K.cast(1, float32) - Sii + Sij)
 
-        loss -= 6.0
+        loss -= 1.0
         return loss
 
     return lossf
