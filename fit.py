@@ -81,7 +81,7 @@ def main():
     legendMetric = []
     pltL = []
     pltM = []
-    for lr in range(1, 8):
+    for lr in range(1, 4):
         lr = 10**-lr
         model = ModelBase(W_Clases, lr=lr)
         history = model.fit(X, Y, epochs=NEPOCS)
@@ -95,12 +95,14 @@ def main():
 
     plt.subplot(2, 1, 1)
     plt.title('Loss and Categorical Accuracy')
-    plt.plot(pltL)
+    for c in pltL:
+        plt.plot(c)
     plt.legend(legendLoss)
     plt.ylabel('Value')
 
     plt.subplot(2, 1, 2)
-    plt.plot(pltM)
+    for c in pltM:
+        plt.plot(c)
     plt.legend(legendMetric)
     plt.ylabel('Value')
     plt.xlabel('Epoch')
