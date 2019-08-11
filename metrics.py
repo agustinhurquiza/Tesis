@@ -95,7 +95,9 @@ def main():
         img = cv2.imread(DIRTEST + nomb)
         tam = img.shape[0] * img.shape[1]
         # Extrae los bb true para la imagen elegida.
-        boxs_t = list(filter(lambda x: x['img_name'] == nomb, boxs))[0]['boxs']
+        try:
+            boxs_t = list(filter(lambda x: x['img_name'] == nomb, boxs))[0]['boxs']
+        except:
 
         for (k, b) in enumerate(boxs_t):
             bb = BoundingBox(nomb, b['class'], b['box'][0], b['box'][1], b['box'][2],

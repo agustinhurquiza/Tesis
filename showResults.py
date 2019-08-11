@@ -70,15 +70,20 @@ def main():
     unseenName = json.load(open(FILEUNSEEN))
     words = json.load(open(FILEWORD))
 
-    unseen = [(k, v) for k, v in words.items() if k in unseenName.keys()]
-    nomb = random.choice(glob(DIRTEST + "*")) # Elige una imagen al azar en el directorio.
-    nomb = nomb.split('/')[-1]
-    img = cv2.imread(DIRTEST + nomb)
-    tam = img.shape[0] * img.shape[1]
+    while(True):
+        unseen = [(k, v) for k, v in words.items() if k in unseenName.keys()]
+        nomb = random.choice(glob(DIRTEST + "*")) # Elige una imagen al azar en el directorio.
+        nomb = nomb.split('/')[-1]
+        img = cv2.imread(DIRTEST + nomb)
+        tam = img.shape[0] * img.shape[1]
 
-    # Extrae los bb true para la imagen elegida.
-    boxs_t = list(filter(lambda x: x['img_name'] == nomb, boxs))[0]['boxs']
-    boxs_t = [(b['box'], b['class']) for b in boxs_t]
+        # Extrae los bb true para la imagen elegida.
+        try:
+            boxs_t = list(filter(lambda x: x['img_name'] == nomb, boxs))[0]['boxs']
+        except:
+            continue
+        boxs_t = [(b['box'], b['class']) for b in boxs_t]
+        break
 
     model = ModelBase(compile=False)
     model.load_weights(FILEMODEL)
