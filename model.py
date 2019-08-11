@@ -9,7 +9,6 @@
 
 from keras.layers import Input, Dense
 from keras.models import Model
-from keras.losses import cosine_proximity
 from keras.metrics import categorical_accuracy as cacc
 import keras.backend as K
 from keras.optimizers import Adam
@@ -28,10 +27,10 @@ def custom_loss(W_Clases):
     """
     def lossf(y_true, y_pred):
         loss = 0
-        Sii = K.abs(cosine_proximity(y_pred, y_true))
+        Sii = K.sum(y_true * y_pred, axis=-1)
 
         for w_clase in W_Clases:
-            Sij = K.abs(cosine_proximity(y_pred, w_clase))
+            Sij = K.sum(y_pred * w_clase, axis=-1)
             loss += K.maximum(K.cast(0, float32), K.cast(1, float32) - Sii + Sij)
 
         loss -= 1.0

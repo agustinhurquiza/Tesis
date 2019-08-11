@@ -81,7 +81,7 @@ def main():
     legendMetric = []
     pltL = []
     pltM = []
-    for lr in range(1, 4):
+    for lr in range(1, 9):
         lr = 10**-lr
         model = ModelBase(W_Clases, lr=lr)
         history = model.fit(X, Y, epochs=NEPOCS)

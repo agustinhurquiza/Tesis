@@ -56,9 +56,6 @@ def parser():
     parser.add_argument('-fm', '--fmodel', type=str, required=True,
                         help="""Arvhivo donde se ecnuentra el modelo pre-entrenado.""")
 
-    parser.add_argument('-s', '--save', type=bool, required=True,
-                        help="""True se guarda las imagenes de salida, False solo se muestran.""")
-
     args = parser.parse_args()
 
     return args

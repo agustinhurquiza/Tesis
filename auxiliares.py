@@ -109,7 +109,7 @@ def predictBox(img, R, unseen, model, resNet, NCOLS=299, NFILS=299):
         x = normalize(x, axis=1)
         x = model.predict(x)
         # Descrimina al grupo que pertence la bb segun la similutd coseno.
-        x = np.array([2 - cosine(x, cls[1]) for cls in unseen])
+        x = x.dot(unseen.T).squeeze()
         grupos_cls[np.argmax(x)].append((np.max(x), bb))
 
     box_p = []

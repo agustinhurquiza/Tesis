@@ -170,7 +170,7 @@ def main():
                 cls = str(boxs[ious[0][0]]['class'])
                 appendValue(X, Y, bb, cls, img, modelo, w2vec)
 
-            elif ious[0][1] < BACKGROUND:
+            elif 0 < ious[0][1] < BACKGROUND:
                 appendValue(X, Y, bb, '-1', img, modelo, w2vec)
 
             elif ious[0][1] == 0 and randint(0, PROB):
