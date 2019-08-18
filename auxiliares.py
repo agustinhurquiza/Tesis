@@ -76,10 +76,6 @@ def area(r):
 
     return (x2-x1)*(y2-y1)
 
-    iou = interArea / float(boxAArea + boxBArea - interArea)
-
-    return iou
-
 
 def predictBox(img, R, unseen, model, resNet, NCOLS=299, NFILS=299):
     """ Esta funcion obtiene predice las clases al que pertence una lista de
@@ -101,6 +97,7 @@ def predictBox(img, R, unseen, model, resNet, NCOLS=299, NFILS=299):
     """
 
     grupos_cls = [[] for _ in range(len(unseen))]
+    unseen = np.array([x[1] for x in unseen])
     for bb in R:
         # Pipeline para cada boundingbox propuesta.
         x1, x2, y1, y2 = bb[0], bb[2], bb[1], bb[3]
@@ -109,7 +106,7 @@ def predictBox(img, R, unseen, model, resNet, NCOLS=299, NFILS=299):
         x = normalize(x, axis=1)
         x = model.predict(x)
         # Descrimina al grupo que pertence la bb segun la similutd coseno.
-        x = x.dot(unseen.T).squeeze()
+        x = x.dot(np.array(unseen).T).squeeze()
         grupos_cls[np.argmax(x)].append((np.max(x), bb))
 
     box_p = []

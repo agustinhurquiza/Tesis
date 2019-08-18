@@ -17,7 +17,7 @@ from random import randint
 from sklearn.preprocessing import normalize
 from keras.applications.inception_resnet_v2 import InceptionResNetV2
 
-from auxiliares import save, load, iou
+from auxiliares import save, load, iou, area
 from SegmentationSelectiveSearch.selective_search import selective_search
 
 
