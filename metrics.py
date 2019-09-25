@@ -98,7 +98,7 @@ def main():
         try:
             boxs_t = list(filter(lambda x: x['img_name'] == nomb, boxs))[0]['boxs']
         except:
-
+            continue
         for (k, b) in enumerate(boxs_t):
             bb = BoundingBox(nomb, b['class'], b['box'][0], b['box'][1], b['box'][2],
                              b['box'][3], CoordinatesType.Absolute, (NCOLS, NFILS),

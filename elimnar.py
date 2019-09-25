@@ -67,7 +67,11 @@ def main():
     resultado = {}
     for k, v in words.items():
         items = [i for i, y in enumerate(Y) if np.array_equal(y, v)]
-        resultado[k] = np.array(sample(X[items].tolist(), 1000))
+        maxi = 500
+        print(len(items))
+        if len(items) < 500:
+            maxi = len(items)
+        resultado[k] = np.array(sample(X[items].tolist(), maxi))
 
     print("Termino de preprocesamiento................")
     idem = []
