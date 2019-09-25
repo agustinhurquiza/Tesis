@@ -15,7 +15,7 @@ import math
 import numpy as np
 from random import randint
 from sklearn.preprocessing import normalize
-from keras.applications.inception_resnet_v2 import InceptionResNetV2
+from keras.applications.resnet50 import ResNet50
 
 from auxiliares import save, load, iou, area, procesar
 from SegmentationSelectiveSearch.selective_search import selective_search
@@ -111,8 +111,8 @@ def main():
     global NCOLS, NFILS
 
     # Tamaño de las imagnes de la entrada del modelo.
-    NCOLS = 299
-    NFILS = 299
+    NCOLS = 224
+    NFILS = 224
     # Intersecion que debe tener una propuesta con un box.
     IOU = 0.5
     # Intersecion para considerar una propuesta como background.
@@ -123,7 +123,7 @@ def main():
     SCALA = 1
     STHSLD = 0.99
     # Probabilidad de backgraund se agrege (1/PROB).
-    PROB = 3
+    PROB = 5
     # Maximo de imagenes procesadas sin guardar.
     MAXS = 5000
 
@@ -132,8 +132,8 @@ def main():
 
     boundboxs = json.load(open(fileB, 'r'))
     w2vec = json.load(open(fileW))
-    modelo = InceptionResNetV2(include_top=False, weights='imagenet',
-                               pooling='avg')
+    modelo = ResNet50(include_top=False, weights='imagenet', pooling = None,
+                      input_shape =(NCOLS, NFILS, 3))
 
     for k, img in enumerate(glob(dir + '/*.jpg')):
         print("Imagenes procesadas: " + str(k+1))
@@ -173,7 +173,7 @@ def main():
             elif 0 < ious[0][1] < BACKGROUND:
                 appendValue(X, Y, bb, '-1', img, modelo, w2vec)
 
-            elif ious[0][1] == 0 and randint(0, PROB):
+            elif ious[0][1] == 0 and randint(0, PROB) == 0:
                 appendValue(X, Y, bb, '-1', img, modelo, w2vec)
 
     if X != []:
