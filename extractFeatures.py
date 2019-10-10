@@ -15,7 +15,8 @@ import math
 import numpy as np
 from random import randint
 from sklearn.preprocessing import normalize
-from keras.applications.resnet50 import ResNet50
+from keras.applications.vgg16 import VGG16
+
 
 from auxiliares import save, load, iou, area, procesar
 from SegmentationSelectiveSearch.selective_search import selective_search
@@ -111,8 +112,8 @@ def main():
     global NCOLS, NFILS
 
     # Tamaño de las imagnes de la entrada del modelo.
-    NCOLS = 224
-    NFILS = 224
+    NCOLS = 65
+    NFILS = 65
     # Intersecion que debe tener una propuesta con un box.
     IOU = 0.5
     # Intersecion para considerar una propuesta como background.
@@ -125,15 +126,14 @@ def main():
     # Probabilidad de backgraund se agrege (1/PROB).
     PROB = 5
     # Maximo de imagenes procesadas sin guardar.
-    MAXS = 5000
+    MAXS = 100
 
     X = []
     Y = []
 
     boundboxs = json.load(open(fileB, 'r'))
     w2vec = json.load(open(fileW))
-    modelo = ResNet50(include_top=False, weights='imagenet', pooling = None,
-                      input_shape =(NCOLS, NFILS, 3))
+    modelo = VGG16(include_top=False, weights='imagenet', pooling=None, input_shape =(NCOLS, NFILS, 3))
 
     for k, img in enumerate(glob(dir + '/*.jpg')):
         print("Imagenes procesadas: " + str(k+1))
@@ -181,7 +181,6 @@ def main():
         Y = np.array(Y)
         save(dirS + nombreData + '-' + str(int(math.ceil(k/MAXS))) + '-X.mat', X)
         save(dirS + nombreData + '-' + str(int(math.ceil(k/MAXS))) + '-Y.mat', Y)
-
 
 if __name__ == "__main__":
     main()

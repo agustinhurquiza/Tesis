@@ -51,7 +51,7 @@ def main():
     FILESEEN = args.fseen
 
     OUTSIZE = 300
-    INSIZE = 1536
+    INSIZE = 2048
 
     seen = json.load(open(FILESEEN)).keys()
     words = json.load(open(FILEWORD))

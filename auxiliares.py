@@ -11,9 +11,10 @@ def save(filename, mat):
        filename (str): file name
        mat (ndarray): numpy array
     """
+    print(mat.shape)
     if not isinstance(mat, np.ndarray):
         raise ValueError('for now, we can only save numpy arrays')
-    return sio.savemat(filename, {'data': mat}, appendmat=False)
+    return sio.savemat(filename, {'data': mat}, appendmat=True, format='5', long_field_names=False, do_compression=False, oned_as='row')
 
 
 def load(filename):
