@@ -42,8 +42,6 @@ def parser():
 
 def main():
     args = parser()
-
-    DIRDATA = args.dirdata
     FILEWORD = args.fword
     FILESEEN = args.fseen
 
@@ -54,7 +52,7 @@ def main():
     words = json.load(open(FILEWORD))
     words = {k:v for k,v in words.items() if k in seen}
 
-    for DIRDATA in set([item for item in glob('Data/*')])
+    for DIRDATA in set([item for item in glob('Data/*')]):
     # Carga la data pre-procesadas.
         X = np.empty((0, INSIZE))
         Y = np.empty((0, OUTSIZE))
@@ -64,6 +62,7 @@ def main():
             X = np.concatenate((X, load(file + '-X.mat')), axis=0)
             Y = np.concatenate((Y, load(file + '-Y.mat')), axis=0)
 
+        continue
         resultado = {}
         for k, v in words.items():
             items = [i for i, y in enumerate(Y) if np.array_equal(y, v)]
@@ -83,7 +82,7 @@ def main():
             cl1 = resultado[k1]
             cl2 = resultado[k2]
             r = 0
-            for _ in range(1000):032
+            for _ in range(1000):
                 x1 = sample(list(cl1), 1)[0]
                 x2 = sample(list(cl2), 1)[0]
                 r += x1.dot(x2)
