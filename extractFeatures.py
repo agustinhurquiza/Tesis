@@ -184,20 +184,17 @@ def main():
 
                (InceptionResNetV2(include_top=False, weights='imagenet', pooling=None , input_shape=(299, 299, 3)), 299, 299, 'inc-299-img-n'),
                (InceptionResNetV2(include_top=False, weights='imagenet', pooling=None , input_shape=(150, 150, 3)), 150, 150, 'inc-150-img-n'),
-               (InceptionResNetV2(include_top=False, weights='imagenet', pooling=None , input_shape=(68, 68, 3)), 68, 68, 'inc-68-img-n'),
-               (InceptionResNetV2(include_top=False, weights='imagenet', pooling=None , input_shape=(32, 32, 3)), 32, 32, 'inc-32-img-n'),
+               (InceptionResNetV2(include_top=False, weights='imagenet', pooling=None , input_shape=(75, 75, 3)), 75, 75, 'inc-75-img-n'),
                (InceptionResNetV2(include_top=False, weights='imagenet', pooling='max', input_shape=(299, 299, 3)), 299, 299, 'inc-299-img-m'),
                (InceptionResNetV2(include_top=False, weights='imagenet', pooling='max', input_shape=(150, 150, 3)), 150, 150, 'inc-150-img-m'),
-               (InceptionResNetV2(include_top=False, weights='imagenet', pooling='max', input_shape=(68, 68, 3)), 68, 68, 'inc-68-img-m'),
-               (InceptionResNetV2(include_top=False, weights='imagenet', pooling='max', input_shape=(32, 32, 3)), 32, 32, 'inc-32-img-m'),
+               (InceptionResNetV2(include_top=False, weights='imagenet', pooling='max', input_shape=(75, 75, 3)), 75, 75, 'inc-75-img-m'),
                (InceptionResNetV2(include_top=False, weights='imagenet', pooling='avg', input_shape=(299, 299, 3)), 299, 299, 'inc-299-img-a'),
                (InceptionResNetV2(include_top=False, weights='imagenet', pooling='avg', input_shape=(150, 150, 3)), 150, 150, 'inc-150-img-a'),
-               (InceptionResNetV2(include_top=False, weights='imagenet', pooling='avg', input_shape=(68, 68, 3)), 68, 68, 'inc-68-img-a'),
-               (InceptionResNetV2(include_top=False, weights='imagenet', pooling='avg', input_shape=(32, 32, 3)), 32, 32, 'inc-32-img-a')]
+               (InceptionResNetV2(include_top=False, weights='imagenet', pooling='avg', input_shape=(75, 75, 3)), 75, 75, 'inc-75-img-a')]
 
-    for (model, NCOLS, NFILS, dirs) in models:
+    for (modelo, NCOLS, NFILS, dirs) in modelos:
         print('start model: ' + dirs)
-        dirs = 'Data/' + dirs
+        dirs = 'Data/' + dirs + '/'
         os.mkdir(dirs)
         X = []
         Y = []
@@ -207,8 +204,8 @@ def main():
             if k % MAXS == 0 and k != 0:
                 X = np.array(X)
                 Y = np.array(Y)
-                save(dirS + nombreData + '-' + str(int(k/MAXS)) + '-X.mat', X)
-                save(dirS + nombreData + '-' + str(int(k/MAXS)) + '-Y.mat', Y)
+                save(dirs + nombreData + '-' + str(int(k/MAXS)) + '-X.mat', X)
+                save(dirs + nombreData + '-' + str(int(k/MAXS)) + '-Y.mat', Y)
                 X, Y = [], []
 
             name = img.split('/')[-1]
@@ -245,8 +242,8 @@ def main():
         if X != []:
             X = np.array(X)
             Y = np.array(Y)
-            save(dirS + nombreData + '-' + str(int(math.ceil(k/MAXS))) + '-X.mat', X)
-            save(dirS + nombreData + '-' + str(int(math.ceil(k/MAXS))) + '-Y.mat', Y)
+            save(dirs + nombreData + '-' + str(int(math.ceil(k/MAXS))) + '-X.mat', X)
+            save(dirs + nombreData + '-' + str(int(math.ceil(k/MAXS))) + '-Y.mat', Y)
 
 if __name__ == "__main__":
     main()
