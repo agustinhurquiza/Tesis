@@ -27,9 +27,29 @@ def load(filename):
     return sio.loadmat(filename, appendmat=False, squeeze_me=True)['data']
 
 
+def extract_boxes_edges(edge_detection, img, MAX_BOXS):
+    """ Extrae las propuestas de objetos en una imagen utilizando edge boxs.
+        Args:
+            edge_detection (model): Modelo de edge detection. Ver cv2.ximgproc.
+            img (np.array): Imagen a la que se quiere extraer propuestas.
+        Returns:
+            (scores, boxs): Propuetas encontradas y sus respectivo scores.
+    """
+    edges = edge_detection.detectEdges(np.float32(img)/255.0)
+
+    orimap = edge_detection.computeOrientation(edges)
+    edges = edge_detection.edgesNms(edges, orimap)
+
+    edge_boxes = cv2.ximgproc.createEdgeBoxes()
+    edge_boxes.setMaxBoxes(MAX_BOXS)
+    boxes, scores = edge_boxes.getBoundingBoxes(edges, orimap)
+
+    return (boxes, scores)
+
+
 def iou(boxA, boxB):
     """ Funcion encargada de calcular Intersection over Union de dos bounding
-         boxs.
+         boxs. Formato [x1, y1, x2, y2].
         Returns:
             <float>: 0 <= iou <= 1.
     """
@@ -54,25 +74,26 @@ def procesar(r):
         Returns:
             [int]: Las cuatro cordenadas del bounding box.
     """
-    x1 = r['x_min']
-    y1 = r['y_min']
-    x2 = r['width'] + x1
-    y2 = r['height'] + y1
+    x1 = r[0]
+    y1 = r[1]
+    x2 = x1 + r[2]
+    y2 = y1 + r[3]
 
     return [x1, y1, x2, y2]
 
 
 def area(r):
     """ Funcion encargada de calcular el area de un bounding box.
+         Formato [x1, y1, x2, y2].
         Args:
             r (dict): Bounding box.
         Returns:
             float: Area del bounding box.
     """
-    x1 = r['x_min']
-    y1 = r['y_min']
-    x2 = r['width'] + x1
-    y2 = r['height'] + y1
+    x1 = r[0]
+    y1 = r[2]
+    x2 = r[1]
+    y2 = r[3]
 
     return (x2-x1)*(y2-y1)
 
