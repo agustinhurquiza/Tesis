@@ -57,7 +57,7 @@ def main():
     NEPOCS = args.nepocs
 
     OUTSIZE = 300
-    INSIZE = 1536
+    INSIZE = 512
 
     seen = json.load(open(FILESEEN))
     words = json.load(open(FILEWORD))
@@ -65,15 +65,18 @@ def main():
     # Carga la data pre-procesadas.
     X = np.empty((0, INSIZE))
     Y = np.empty((0, OUTSIZE))
-    for file in set([item[:-len('-_.mat')] for item in glob(DIRDATA+'/*')]):
-        X = np.concatenate((X, load(file + '-X.mat')), axis=0)
-        Y = np.concatenate((Y, load(file + '-Y.mat')), axis=0)
-
-    # Filtra los boundingbox backgraund.
     ZEROS = np.zeros([OUTSIZE])
-    items = [i for i, y in enumerate(Y) if not np.array_equal(y, ZEROS)]
-    X = X[items]
-    Y = Y[items]
+    for file in set([item[:-len('-_.mat')] for item in glob(DIRDATA+'/*')]):
+        X_t = load(file + '-X.mat')
+        Y_t = load(file + '-Y.mat')
+        # Filtra los boundingbox backgraund.
+        items = [i for i, y in enumerate(Y_t) if not np.array_equal(y, ZEROS)]
+        X_t = X_t[items]
+        Y_t = Y_t[items]
+        X = np.concatenate((X, X_t), axis=0)
+        Y = np.concatenate((Y, Y_t), axis=0)
+
+    print("Se termino de cargar features.")
 
     W_Clases = [arrayToTensor(v, 'float32') for k, v in words.items() if k in seen.keys()]
 
@@ -82,8 +85,9 @@ def main():
     pltL = []
     pltM = []
     for lr in range(1, 9):
+        print("Arrancando modelo whit lr")
         lr = 10**-lr
-        model = ModelBase(W_Clases, lr=lr)
+        model = ModelBase(W_Clases, lr=lr, OUTSIZE=OUTSIZE, INSIZE=INSIZE)
         history = model.fit(X, Y, epochs=NEPOCS)
         model.save(FILEO+'-lr-'+str(lr)+'.h5')
 

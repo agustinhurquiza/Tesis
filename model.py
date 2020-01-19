@@ -33,7 +33,7 @@ def custom_loss(W_Clases):
             Sij = K.sum(y_pred * w_clase, axis=-1)
             loss += K.maximum(K.cast(0, float32), K.cast(1, float32) - Sii + Sij)
 
-        loss -= 1.0
+        #loss -= 1.0
         return loss
 
     return lossf

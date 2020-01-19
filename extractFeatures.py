@@ -126,10 +126,8 @@ def main():
         print("Imagenes procesadas: " + str(k+1))
 
         if k % MAXS == 0 and k != 0:
-            print(np.array(X).shape)
             X = normalize(np.array(X).squeeze())
             Y = np.array(Y)
-            return
             save(dirS + nombreData + '-' + str(int(k/MAXS)) + '-X.mat', X)
             save(dirS + nombreData + '-' + str(int(k/MAXS)) + '-Y.mat', Y)
             X, Y = [], []
