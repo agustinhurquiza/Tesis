@@ -9,26 +9,22 @@
 
 import sys
 import os
-
 currentPath = os.path.dirname(os.path.realpath(__file__))
 libPath = os.path.join(currentPath, 'ObjectDetectionMetrics', 'lib')
 if libPath not in sys.path:
     sys.path.insert(0, libPath)
 
-import random
 import json
 import argparse
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
 from BoundingBox import BoundingBox
 from BoundingBoxes import BoundingBoxes
 from Evaluator import *
 from glob import glob
-from keras.applications.inception_resnet_v2 import InceptionResNetV2
-from SegmentationSelectiveSearch.selective_search import selective_search
+from keras.applications.vgg16 import VGG16
 from model import ModelBase
-from auxiliares import area, procesar, iou, save, predictBox
+from auxiliares import area, procesar, iou, save, extract_boxes_edges
 
 
 def parser():
@@ -62,9 +58,7 @@ def parser():
 
 
 def main():
-    SCALA = 1 # TUNING maxima cantidad de propuestas.
-    STHSLD = 0.99 # TUNING maxima cantidad de propuestas.
-    IGNORAR = 0.9 # TUNING Elimina las boundingboxes de gran tamaño.
+    IGNORAR = 0.8 # TUNING Elimina las boundingboxes de gran tamaño.
     IOUT = 0.5 # TUNING iou para metricas.
     KRECALL = 100 # TUNING cantidad de propuestas que se concidera.
     NCOLS, NFILS = 299, 299
@@ -82,7 +76,8 @@ def main():
 
     model = ModelBase(compile=False)
     model.load_weights(FILEMODEL)
-    resNet = InceptionResNetV2(include_top=False, weights='imagenet', pooling='avg')
+    vgg16 = VGG16(include_top=False, weights='imagenet', pooling='max',
+                   input_shape=(NCOLS, NFILS, 3))
 
     unseen = [(k, v) for k, v in words.items() if k in unseenName.keys()]
 
@@ -91,14 +86,15 @@ def main():
 
     for nomb in glob(DIRTEST + "*"):
 
-        nomb = nomb.split('/')[-1]
-        img = cv2.imread(DIRTEST + nomb)
-        tam = img.shape[0] * img.shape[1]
+        name = img.split('/')[-1]
+        img = cv2.imread(img)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         # Extrae los bb true para la imagen elegida.
         try:
             boxs_t = list(filter(lambda x: x['img_name'] == nomb, boxs))[0]['boxs']
         except:
             continue
+
         for (k, b) in enumerate(boxs_t):
             bb = BoundingBox(nomb, b['class'], b['box'][0], b['box'][1], b['box'][2],
                              b['box'][3], CoordinatesType.Absolute, (NCOLS, NFILS),
@@ -106,10 +102,12 @@ def main():
             allBoundingBoxes.addBoundingBox(bb)
             BoundingBoxesK.addBoundingBox(bb)
 
-        _, R = selective_search(img, colour_space='rgb', scale=SCALA, sim_threshold=STHSLD)
-        R = np.array([procesar(r) for r in R if area(r) < (IGNORAR*tam)])
+        propuestas, score = extract_boxes_edges(edge_detection, img, MAX_BOXS)
+        propuestas = [procesar(r) for r in propuestas]
+        propuestas = [r for r in propuestas if area(r) < (IGNORAR*tam)]
+        # propuestas = [] score > 0.07
 
-        boxs_p = predictBox(img, R, unseen, model, resNet)
+        boxs_p = predictBox(img, propuetas, unseen, model, resNet)
         for b in boxs_p:
             bb = BoundingBox(nomb, int(list(unseenName)[b[1]]), b[0][0], b[0][1],
                              b[0][2], b[0][3], CoordinatesType.Absolute, (NCOLS, NFILS),

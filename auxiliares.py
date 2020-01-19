@@ -99,9 +99,8 @@ def area(r):
 
 
 def predictBox(img, R, unseen, model, resNet, NCOLS=299, NFILS=299):
-    """ Esta funcion obtiene predice las clases al que pertence una lista de
-        bounding, ademas se queda con las mejores propuestas. Es responsabiliad
-        del usario definir  Y NMSIGNORE.
+    """ Esta funcion  predice las clases al que pertence una lista de
+        BoundingBox, ademas se queda con las mejores propuestas.
 
         Args:
             img (np.array): Imagen a la cual se le quiere obtener las propuesta.
@@ -123,7 +122,7 @@ def predictBox(img, R, unseen, model, resNet, NCOLS=299, NFILS=299):
         # Pipeline para cada boundingbox propuesta.
         x1, x2, y1, y2 = bb[0], bb[2], bb[1], bb[3]
         x = cv2.resize(img[y1:y2, x1:x2], (NCOLS, NFILS)).reshape(1, NCOLS, NFILS, 3)
-        x = resNet.predict(x).reshape(1, -1)
+        x = resNet.predict(x).squeeze()
         x = normalize(x, axis=1)
         x = model.predict(x)
         # Descrimina al grupo que pertence la bb segun la similutd coseno.

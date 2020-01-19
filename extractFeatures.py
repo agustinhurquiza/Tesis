@@ -16,22 +16,7 @@ import numpy as np
 from random import randint
 from sklearn.preprocessing import normalize
 from keras.applications.vgg16 import VGG16
-
 from auxiliares import save, iou, area, procesar, extract_boxes_edges
-
-def boxsByName(boxs, name):
-    """ Devuelve una lista de boundig box asociado a una imagen.
-        Args:
-            boxs (dict): Diccionario donde se encuentra los boundig boxs
-                         de cada imagen.
-            name (str): Nombre de la imagen.
-        Returns:
-            [dict]: Conjunto de bounding box asociado a la imagen..
-    """
-
-    boxs = list(filter(lambda x: x['img_name'] == name, boxs))[0]['boxs']
-
-    return boxs
 
 
 def appendValue(X, Y, box, cls, img, model, w2vec):
@@ -123,7 +108,7 @@ def main():
     # Probabilidad de backgraund se agrege (1/PROB).
     PROB = 1000
     # Maximo de imagenes procesadas sin guardar.
-    MAXS = 5000
+    MAXS = 2
     # Numero maximo de box por imagen para edge detection.
     MAX_BOXS = 600
     # Uicacion donde se encuentra el modelo edge edge detection.
@@ -141,8 +126,10 @@ def main():
         print("Imagenes procesadas: " + str(k+1))
 
         if k % MAXS == 0 and k != 0:
-            X = normalize(np.array(X))
+            print(np.array(X).shape)
+            X = normalize(np.array(X).squeeze())
             Y = np.array(Y)
+            return
             save(dirS + nombreData + '-' + str(int(k/MAXS)) + '-X.mat', X)
             save(dirS + nombreData + '-' + str(int(k/MAXS)) + '-Y.mat', Y)
             X, Y = [], []
@@ -153,7 +140,7 @@ def main():
         tam = img.shape[0] * img.shape[1]
 
         try:
-            boxs = boxsByName(boundboxs, name)
+            boxs = list(filter(lambda x: x['img_name'] == name, boundboxs))[0]['boxs']
         except (IndexError, cv2.error):
             continue
 
@@ -164,12 +151,14 @@ def main():
         for bb in boxs:
             appendValue(X, Y, bb['box'], str(bb['class']), img, modelo, w2vec)
 
-        for bb in propuestas:
+        for i,bb in enumerate(propuestas):
             ious = [(i, iou(bb, b['box'])) for i, b in enumerate(boxs)]
             ious.sort(key=lambda x: x[1], reverse=True)
 
             if ious[0][1] > IOU:
                 clase = str(boxs[ious[0][0]]['class'])
+                crop_img = img[bb[1]:bb[1]+bb[3], bb[0]:bb[0]+bb[2]]
+                cv2.imwrite("eliminar/croped-" + str(k) + "-"+ str(i) + "-" + clase + ".jpg", crop_img)
                 appendValue(X, Y, bb, clase, img, modelo, w2vec)
 
             elif 0 < ious[0][1] < BACKGROUND:
@@ -179,7 +168,7 @@ def main():
                 appendValue(X, Y, bb, '-1', img, modelo, w2vec)
 
     if X != []:
-        X = normalize(np.array(X))
+        X = normalize(np.array(X).squeeze())
         Y = np.array(Y)
         save(dirS + nombreData + '-' + str(int(math.ceil(k/MAXS))) + '-X.mat', X)
         save(dirS + nombreData + '-' + str(int(math.ceil(k/MAXS))) + '-Y.mat', Y)
