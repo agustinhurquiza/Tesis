@@ -66,6 +66,7 @@ def main():
     X = np.empty((0, INSIZE))
     Y = np.empty((0, OUTSIZE))
     ZEROS = np.zeros([OUTSIZE])
+
     for file in set([item[:-len('-_.mat')] for item in glob(DIRDATA+'/*')]):
         X_t = load(file + '-X.mat')
         Y_t = load(file + '-Y.mat')
@@ -89,6 +90,7 @@ def main():
         lr = 10**-lr
         model = ModelBase(W_Clases, lr=lr, OUTSIZE=OUTSIZE, INSIZE=INSIZE)
         history = model.fit(X, Y, epochs=NEPOCS)
+        history_best = np.argmax(history, axis=1) #NEEW PROBAR ESTO
         model.save(FILEO+'-lr-'+str(lr)+'.h5')
 
         pltL.append(history.history['loss'])
@@ -107,7 +109,7 @@ def main():
     plt.subplot(2, 1, 2)
     for c in pltM:
         plt.plot(c)
-    plt.legend(legendMetric)
+    plt.legend(legeFILEOndMetric)
     plt.ylabel('Value')
     plt.xlabel('Epoch')
 
