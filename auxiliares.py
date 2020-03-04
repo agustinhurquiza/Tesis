@@ -122,7 +122,7 @@ def predictBox(img, R, unseen, model, resNet, NCOLS=299, NFILS=299):
         # Pipeline para cada boundingbox propuesta.
         x1, x2, y1, y2 = bb[0], bb[2], bb[1], bb[3]
         x = cv2.resize(img[y1:y2, x1:x2], (NCOLS, NFILS)).reshape(1, NCOLS, NFILS, 3)
-        x = resNet.predict(x).squeeze()
+        x = resNet.predict(x).squeeze().reshape(1,-1)
         x = normalize(x, axis=1)
         x = model.predict(x)
         # Descrimina al grupo que pertence la bb segun la similutd coseno.

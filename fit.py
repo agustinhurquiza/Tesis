@@ -11,10 +11,12 @@ import argparse
 from glob import glob
 import numpy as np
 import json
+import os
 from tensorflow import convert_to_tensor as arrayToTensor
 from auxiliares import load
 from model import ModelBase
 import matplotlib.pyplot as plt
+from keras.callbacks import ModelCheckpoint
 
 
 def parser():
@@ -36,8 +38,8 @@ def parser():
     parser.add_argument('-s', '--fseen', type=str, required=True,
                         help="""Archivo donde se encuentran las clases vistas.""")
 
-    parser.add_argument('-f', '--fileo', type=str, required=True,
-                        help="""Archivo de salida del modelo.""")
+    parser.add_argument('-o', '--diro', type=str, required=True,
+                        help="""Directorio de salida del modelo.""")
 
     parser.add_argument('-n', '--nepocs', type=int, required=True,
                         help="""Numeo de epocas que se corre el modelo.""")
@@ -53,11 +55,15 @@ def main():
     DIRDATA = args.dirdata
     FILEWORD = args.fword
     FILESEEN = args.fseen
-    FILEO = args.fileo
+    FILEO = args.diro
     NEPOCS = args.nepocs
 
     OUTSIZE = 300
     INSIZE = 512
+
+    BATCH_SIZE = 64 # Hiper parametro
+    LAMBDA = 10e-3    # Hiper parametro
+    MAX_MARGIN = 1  # Hiper parametro
 
     seen = json.load(open(FILESEEN))
     words = json.load(open(FILEWORD))
@@ -70,6 +76,7 @@ def main():
     for file in set([item[:-len('-_.mat')] for item in glob(DIRDATA+'/*')]):
         X_t = load(file + '-X.mat')
         Y_t = load(file + '-Y.mat')
+
         # Filtra los boundingbox backgraund.
         items = [i for i, y in enumerate(Y_t) if not np.array_equal(y, ZEROS)]
         X_t = X_t[items]
@@ -79,24 +86,26 @@ def main():
 
     print("Se termino de cargar features.")
 
-    W_Clases = [arrayToTensor(v, 'float32') for k, v in words.items() if k in seen.keys()]
+    W_Clases = arrayToTensor(np.array([v for k, v in words.items() if k in seen.keys()]), 'float32')
 
     legendLoss = []
     legendMetric = []
     pltL = []
     pltM = []
+
     for lr in range(1, 9):
         print("Arrancando modelo whit lr")
-        lr = 10**-lr
-        model = ModelBase(W_Clases, lr=lr, OUTSIZE=OUTSIZE, INSIZE=INSIZE)
-        history = model.fit(X, Y, epochs=NEPOCS)
-        history_best = np.argmax(history, axis=1) #NEEW PROBAR ESTO
-        model.save(FILEO+'-lr-'+str(lr)+'.h5')
+        lr = 10**-lr 
+        callbacks = [ModelCheckpoint(filepath=os.path.join(FILEO, '{:.1e}'.format(lr) + '-weights.hdf5'),
+                                     monitor='loss', verbose=1,  save_best_only=True, save_weights_only=False, mode='auto')]
 
+        model = ModelBase(W_Clases, lr=lr, OUTSIZE=OUTSIZE, INSIZE=INSIZE, lamb=LAMBDA,max_marg=MAX_MARGIN)
+        history = model.fit(X, Y, epochs=NEPOCS, callbacks=callbacks, shuffle=True, batch_size=BATCH_SIZE)
+        
         pltL.append(history.history['loss'])
         pltM.append(history.history['categorical_accuracy'])
-        legendLoss += ['Loss-'+str(lr)]
-        legendMetric += ['CAc'+ str(lr)]
+        legendLoss += ['Loss-' + str(lr)]
+        legendMetric += ['CAc' + str(lr)]
         print("Finalizo de entrenar con lr:" + str(lr) + "\n\n\n\n")
 
     plt.subplot(2, 1, 1)
@@ -109,7 +118,7 @@ def main():
     plt.subplot(2, 1, 2)
     for c in pltM:
         plt.plot(c)
-    plt.legend(legeFILEOndMetric)
+    plt.legend(legendMetric)
     plt.ylabel('Value')
     plt.xlabel('Epoch')
 

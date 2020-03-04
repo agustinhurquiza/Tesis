@@ -14,11 +14,10 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 from glob import glob
-from keras.applications.inception_resnet_v2 import InceptionResNetV2
-from SegmentationSelectiveSearch.selective_search import selective_search
+from keras.applications.vgg16 import VGG16
 
 from model import ModelBase
-from auxiliares import area, procesar, iou, save, predictBox, drawRectangle
+from auxiliares import area, procesar, iou, save, predictBox, extract_boxes_edges, drawRectangle
 
 
 def parser():
@@ -64,7 +63,11 @@ def main():
     DIRTEST = args.dtest
     FILEBOXT = args.fboxt
     FILEMODEL = args.fmodel
+    MODEL_EDGE = 'bin/bing-model.yml.gz' 
+    INSIZE = 512
+    NCOLS, NFILS = 299, 299
     SAVE = args.save
+    MAX_BOXS = 5
 
     boxs = json.load(open(FILEBOXT))
     unseenName = json.load(open(FILEUNSEEN))
@@ -82,18 +85,24 @@ def main():
             boxs_t = list(filter(lambda x: x['img_name'] == nomb, boxs))[0]['boxs']
         except:
             continue
+        if random.randint(0,20) != 1:
+            continue
         boxs_t = [(b['box'], b['class']) for b in boxs_t]
         break
 
-    model = ModelBase(compile=False)
+    model = ModelBase(compile=False, INSIZE=INSIZE)
     model.load_weights(FILEMODEL)
 
-    resNet = InceptionResNetV2(include_top=False, weights='imagenet', pooling='avg')
-    _, R = selective_search(img, colour_space='rgb', scale=SCALA, sim_threshold=STHSLD)
-    R = np.array([procesar(r) for r in R if area(r) < (IGNORAR*tam)])
+    vgg16 = VGG16(include_top=False, weights='imagenet', pooling='max',
+                  input_shape=(NCOLS, NFILS, 3))
+    edge_detection = cv2.ximgproc.createStructuredEdgeDetection(MODEL_EDGE)   
 
-    boxs_p = predictBox(img, R, unseen, model, resNet)
-    # Macth indice de clases a numero de clases.
+    propuestas, score = extract_boxes_edges(edge_detection, img, MAX_BOXS)
+    propuestas = [procesar(r) for r in propuestas]
+    propuestas = [r for r in propuestas if area(r) < (IGNORAR*tam)]
+    boxs_p = predictBox(img, propuestas, unseen, model, vgg16)
+   
+   # Macth indice de clases a numero de clases.
     boxs_p = [(i[0], int(list(unseenName)[i[1]])) for i in boxs_p]
 
     img_t, img_p = drawRectangle(img, boxs_t, boxs_p, unseenName)
