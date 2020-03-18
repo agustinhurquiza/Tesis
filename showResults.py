@@ -67,7 +67,7 @@ def main():
     INSIZE = 512
     NCOLS, NFILS = 299, 299
     SAVE = args.save
-    MAX_BOXS = 5
+    MAX_BOXS = 100
 
     boxs = json.load(open(FILEBOXT))
     unseenName = json.load(open(FILEUNSEEN))

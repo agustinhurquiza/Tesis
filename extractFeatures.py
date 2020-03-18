@@ -108,7 +108,7 @@ def main():
     # Probabilidad de backgraund se agrege (1/PROB).
     PROB = 1000
     # Maximo de imagenes procesadas sin guardar.
-    MAXS = 2
+    MAXS = 500
     # Numero maximo de box por imagen para edge detection.
     MAX_BOXS = 600
     # Uicacion donde se encuentra el modelo edge edge detection.

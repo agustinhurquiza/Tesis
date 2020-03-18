@@ -158,14 +158,14 @@ def drawRectangle(img, boxs_t, boxs_p, unseenName):
         clas = unseenName[str(b[1])]
         x1, x2, y1, y2 = b[0][0], b[0][2], b[0][1], b[0][3]
         cv2.rectangle(img_t, (x1, y1), (x2, y2), (0, 255, 0), 2)
-        cv2.putText(img_t, clas, (x1+10, y1+10), cv2.FONT_HERSHEY_TRIPLEX, 0.3,
+        cv2.putText(img_t, clas, (x1+10, y1+10), cv2.FONT_HERSHEY_TRIPLEX, 0.5,
                     (0, 255, 0), 1)
 
     for b in boxs_p:
         clas = unseenName[str(b[1])]
         x1, x2, y1, y2 = b[0][0], b[0][2], b[0][1], b[0][3]
         cv2.rectangle(img_p, (x1, y1), (x2, y2), (255, 0, 0), 2)
-        cv2.putText(img_p, clas, (x1+10, y1+10), cv2.FONT_HERSHEY_TRIPLEX, 0.3,
+        cv2.putText(img_p, clas, (x1+10, y1+10), cv2.FONT_HERSHEY_TRIPLEX, 0.5,
                     (255, 0, 0), 1)
 
     return img_t, img_p
