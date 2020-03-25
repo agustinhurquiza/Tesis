@@ -89,6 +89,8 @@ def main():
     allBoundingBoxes = BoundingBoxes()
     BoundingBoxesK = BoundingBoxes()
 
+    allgrundtruths = 0
+
     for nimg, img in enumerate(glob(DIRTEST + "*")):
         print("Imagnes procesadas: ", nimg)
         nomb = img.split('/')[-1]
@@ -104,6 +106,7 @@ def main():
             continue
 
         for (k, b) in enumerate(boxs_t):
+            allgrundtruths += 1
             bb = BoundingBox(nomb, b['class'], b['box'][0], b['box'][1], b['box'][2],
                              b['box'][3], CoordinatesType.Absolute, (NCOLS, NFILS),
                              BBType.GroundTruth, format=BBFormat.XYX2Y2)
@@ -114,7 +117,7 @@ def main():
         indexs = [i for i, s in enumerate(score) if s > 0.07]
         propuestas = propuestas[indexs]
         propuestas = [procesar(r) for r in propuestas]
-        propuestas = [r for r in propuestas if area(r) < (IGNORAR*tam)]
+        #propuestas = [r for r in propuestas if area(r) < (IGNORAR*tam)]
         propuestas = np.array(propuestas)
         
         boxs_p = predictBox(img, propuestas, unseen, model, vgg16, NCOLS=NCOLS, NFILS=NFILS)
@@ -127,7 +130,7 @@ def main():
                 BoundingBoxesK.addBoundingBox(bb)
 
     evaluator = Evaluator()
-    metricsPerClass = evaluator.GetPascalVOCMetrics(BoundingBoxesK,
+    metricsPerClass = evaluator.GetPascalVOCMetrics(allBoundingBoxes,
                                                     IOUThreshold=IOUT,
                                                     method=MethodAveragePrecision.EveryPointInterpolation)
 
@@ -143,12 +146,11 @@ def main():
     metricsPerClass = evaluator.GetPascalVOCMetrics(BoundingBoxesK,
                                                     IOUThreshold=IOUT,
                                                     method=MethodAveragePrecision.EveryPointInterpolation)
-    tp, allDetections = 0, 0
+    tp = 0
     for mc in metricsPerClass:
         tp += mc['total TP']
-        allDetections += mc['total positives']
 
     print("Recall@%d "% KRECALL)
-    print("%.4f" %(tp/allDetections))
+    print("%.4f" %(tp/allgrundtruths))
 if __name__ == "__main__":
     main()
