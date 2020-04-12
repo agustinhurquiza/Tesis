@@ -61,9 +61,10 @@ def main():
     OUTSIZE = 300
     INSIZE = 512
 
-    BATCH_SIZE = 64 # Hiper parametro
+    BATCH_SIZE = 64   # Hiper parametro
     LAMBDA = 10e-3    # Hiper parametro
-    MAX_MARGIN = 1  # Hiper parametro
+    MAX_MARGIN = 1    # Hiper parametro
+    ACTIVATION = None # Hiper parametro
 
     seen = json.load(open(FILESEEN))
     words = json.load(open(FILEWORD))
@@ -95,13 +96,15 @@ def main():
 
     for lr in range(1, 9):
         print("Arrancando modelo whit lr")
-        lr = 10**-lr 
+        lr = 10**-lr
         callbacks = [ModelCheckpoint(filepath=os.path.join(FILEO, '{:.1e}'.format(lr) + '-weights.hdf5'),
-                                     monitor='loss', verbose=1,  save_best_only=True, save_weights_only=False, mode='auto')]
+                                     monitor='loss', verbose=1,  save_best_only=True,
+                                     save_weights_only=False, mode='auto')]
 
-        model = ModelBase(W_Clases, lr=lr, OUTSIZE=OUTSIZE, INSIZE=INSIZE, lamb=LAMBDA,max_marg=MAX_MARGIN)
+        model = ModelBase(W_Clases, lr=lr, OUTSIZE=OUTSIZE, activation=ACTIVATION,
+                          INSIZE=INSIZE, lamb=LAMBDA, max_marg=MAX_MARGIN)
         history = model.fit(X, Y, epochs=NEPOCS, callbacks=callbacks, shuffle=True, batch_size=BATCH_SIZE)
-        
+
         pltL.append(history.history['loss'])
         pltM.append(history.history['categorical_accuracy'])
         legendLoss += ['Loss-' + str(lr)]
