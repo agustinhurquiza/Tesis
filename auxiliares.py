@@ -27,25 +27,35 @@ def load(filename):
     return sio.loadmat(filename, appendmat=False, squeeze_me=True)['data']
 
 
-def extract_boxes_edges(edge_detection, img, MAX_BOXS):
+def extract_boxes_edges(edge_detection, img, MAX_BOXS, alpha=0.5, beta=0.5):
     """ Extrae las propuestas de objetos en una imagen utilizando edge boxs.
         Args:
             edge_detection (model): Modelo de edge detection. Ver cv2.ximgproc.
             img (np.array): Imagen a la que se quiere extraer propuestas.
+            alpha (float): alpha for edgeboxe.
+            beta (float): beta for edgeboxe.
+
         Returns:
             (scores, boxs): Propuetas encontradas y sus respectivo scores.
     """
     rgb_im = cv.cvtColor(img, cv.COLOR_BGR2RGB)
     edges = edge_detection.detectEdges(np.float32(rgb_im) / 255.0)
 
-    orimap = edge_detection.computeOrientation(edges)
-    edges = edge_detection.edgesNms(edges, orimap)
+    # Get the edges
+    edges = edge_detection.detectEdges(np.float32(rgb_im)/255.0)
+    # Create an orientation map
+    orient_map = edge_detection.computeOrientation(edges)
+    # Suppress edges
+    edges = edge_detection.edgesNms(edges, orient_map)
 
+    #Create edge box:
     edge_boxes = cv2.ximgproc.createEdgeBoxes()
     edge_boxes.setMaxBoxes(MAX_BOXS)
-    boxes, scores = edge_boxes.getBoundingBoxes(edges, orimap)
+    edge_boxes.setAlpha(alpha)
+    edge_boxes.setBeta(beta)
+    prop_boxes, scores = edge_boxes.getBoundingBoxes(edges, orient_map)
 
-    return (boxes, scores)
+    return (prop_boxes, scores)
 
 
 def iou(boxA, boxB):
@@ -54,49 +64,41 @@ def iou(boxA, boxB):
         Returns:
             <float>: 0 <= iou <= 1.
     """
+    assert boxA[0] <= boxA[2], 'Al perecer los box no tienen el formato correcto.'
+    assert boxA[1] <= boxA[3], 'Al perecer los box no tienen el formato correcto.'
+    assert boxB[0] <= boxB[2], 'Al perecer los box no tienen el formato correcto.'
+    assert boxB[1] <= boxB[3], 'Al perecer los box no tienen el formato correcto.'
+
     xA = max(boxA[0], boxB[0])
     yA = max(boxA[1], boxB[1])
     xB = min(boxA[2], boxB[2])
     yB = min(boxA[3], boxB[3])
 
-    interArea = max(0, xB - xA + 1) * max(0, yB - yA + 1)
+    interArea = abs(max((xB - xA, 0)) * max((yB - yA), 0))
+    if interArea == 0:
+        return 0.0
 
-    boxAArea = (boxA[2] - boxA[0] + 1) * (boxA[3] - boxA[1] + 1)
-    boxBArea = (boxB[2] - boxB[0] + 1) * (boxB[3] - boxB[1] + 1)
+    boxAArea = abs((boxA[2] - boxA[0]) * (boxA[3] - boxA[1]))
+    boxBArea = abs((boxB[2] - boxB[0]) * (boxB[3] - boxB[1]))
+
     iou = interArea / float(boxAArea + boxBArea - interArea)
 
     return iou
 
 
-def procesar(r):
-    """ Funcion formatear los bounding box en [x1, y1, x2, y2].
+def procesar(box):
+    """ Funcion formatear los bounding box de [x, y, w, h] en [x1, y1, x2, y2].
         Args:
-            r (dict): Bounding box sin formatear.
+            box (List): Bounding box sin formatear.
         Returns:
             [int]: Las cuatro cordenadas del bounding box.
     """
-    x1 = r[0]
-    y1 = r[1]
-    x2 = x1 + r[2]
-    y2 = y1 + r[3]
+    x1 = box[0]
+    y1 = box[1]
+    x2 = x1 + box[2]
+    y2 = y1 + box[3]
 
     return [x1, y1, x2, y2]
-
-
-def area(r):
-    """ Funcion encargada de calcular el area de un bounding box.
-         Formato [x1, y1, x2, y2].
-        Args:
-            r (dict): Bounding box.
-        Returns:
-            float: Area del bounding box.
-    """
-    x1 = r[0]
-    y1 = r[2]
-    x2 = r[1]
-    y2 = r[3]
-
-    return (x2-x1)*(y2-y1)
 
 
 def predictBox(img, R, unseen, model, resNet, NCOLS=299, NFILS=299):

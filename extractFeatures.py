@@ -144,7 +144,6 @@ def main():
 
         propuestas, _ = extract_boxes_edges(edge_detection, img, MAX_BOXS)
         propuestas = [procesar(r) for r in propuestas]
-        propuestas = [r for r in propuestas if area(r) < (IGNORAR*tam)]
 
         for bb in boxs:
             appendValue(X, Y, bb['box'], str(bb['class']), img, modelo, w2vec)

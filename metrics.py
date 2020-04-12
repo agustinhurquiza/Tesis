@@ -117,9 +117,8 @@ def main():
         indexs = [i for i, s in enumerate(score) if s > 0.07]
         propuestas = propuestas[indexs]
         propuestas = [procesar(r) for r in propuestas]
-        #propuestas = [r for r in propuestas if area(r) < (IGNORAR*tam)]
         propuestas = np.array(propuestas)
-        
+
         boxs_p = predictBox(img, propuestas, unseen, model, vgg16, NCOLS=NCOLS, NFILS=NFILS)
         for k, b in enumerate(boxs_p):
             bb = BoundingBox(nomb, int(list(unseenName)[b[1]]), b[0][0], b[0][1],

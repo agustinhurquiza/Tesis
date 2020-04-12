@@ -63,7 +63,7 @@ def main():
     DIRTEST = args.dtest
     FILEBOXT = args.fboxt
     FILEMODEL = args.fmodel
-    MODEL_EDGE = 'bin/bing-model.yml.gz' 
+    MODEL_EDGE = 'bin/bing-model.yml.gz'
     INSIZE = 512
     NCOLS, NFILS = 299, 299
     SAVE = args.save
@@ -95,13 +95,12 @@ def main():
 
     vgg16 = VGG16(include_top=False, weights='imagenet', pooling='max',
                   input_shape=(NCOLS, NFILS, 3))
-    edge_detection = cv2.ximgproc.createStructuredEdgeDetection(MODEL_EDGE)   
+    edge_detection = cv2.ximgproc.createStructuredEdgeDetection(MODEL_EDGE)
 
     propuestas, score = extract_boxes_edges(edge_detection, img, MAX_BOXS)
     propuestas = [procesar(r) for r in propuestas]
-    propuestas = [r for r in propuestas if area(r) < (IGNORAR*tam)]
     boxs_p = predictBox(img, propuestas, unseen, model, vgg16)
-   
+
    # Macth indice de clases a numero de clases.
     boxs_p = [(i[0], int(list(unseenName)[i[1]])) for i in boxs_p]
 
