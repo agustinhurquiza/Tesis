@@ -35,7 +35,8 @@ def extract_boxes_edges(edge_detection, img, MAX_BOXS):
         Returns:
             (scores, boxs): Propuetas encontradas y sus respectivo scores.
     """
-    edges = edge_detection.detectEdges(np.float32(img)/255.0)
+    rgb_im = cv.cvtColor(img, cv.COLOR_BGR2RGB)
+    edges = edge_detection.detectEdges(np.float32(rgb_im) / 255.0)
 
     orimap = edge_detection.computeOrientation(edges)
     edges = edge_detection.edgesNms(edges, orimap)
@@ -125,6 +126,8 @@ def predictBox(img, R, unseen, model, resNet, NCOLS=299, NFILS=299):
         x = resNet.predict(x).squeeze().reshape(1,-1)
         x = normalize(x, axis=1)
         x = model.predict(x)
+        x = normalize(x, axis=1)
+
         # Descrimina al grupo que pertence la bb segun la similutd coseno.
         x = x.dot(np.array(unseen).T).squeeze()
         grupos_cls[np.argmax(x)].append((np.max(x), bb))
