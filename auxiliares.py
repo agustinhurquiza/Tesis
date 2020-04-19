@@ -27,7 +27,9 @@ def load(filename):
     return sio.loadmat(filename, appendmat=False, squeeze_me=True)['data']
 
 
-def extract_boxes_edges(edge_detection, img, MAX_BOXS, alpha=0.5, beta=0.5):
+def extract_boxes_edges(edge_detection, rgb_im, maxBoxes, minBoxArea, maxAspectRatio, minScore,
+                        edgeMinMag, edgeMergeThr, clusterMinMag, alpha, beta, eta, kappa, gamma)
+):
     """ Extrae las propuestas de objetos en una imagen utilizando edge boxs.
         Args:
             edge_detection (model): Modelo de edge detection. Ver cv2.ximgproc.
@@ -38,9 +40,6 @@ def extract_boxes_edges(edge_detection, img, MAX_BOXS, alpha=0.5, beta=0.5):
         Returns:
             (scores, boxs): Propuetas encontradas y sus respectivo scores.
     """
-    rgb_im = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    edges = edge_detection.detectEdges(np.float32(rgb_im) / 255.0)
-
     # Get the edges
     edges = edge_detection.detectEdges(np.float32(rgb_im)/255.0)
     # Create an orientation map
@@ -49,10 +48,13 @@ def extract_boxes_edges(edge_detection, img, MAX_BOXS, alpha=0.5, beta=0.5):
     edges = edge_detection.edgesNms(edges, orient_map)
 
     #Create edge box:
-    edge_boxes = cv2.ximgproc.createEdgeBoxes()
-    edge_boxes.setMaxBoxes(MAX_BOXS)
-    edge_boxes.setAlpha(alpha)
-    edge_boxes.setBeta(beta)
+    edge_boxes = cv2.ximgproc.createEdgeBoxes(maxBoxes=maxBoxes, minBoxArea=minBoxArea,
+                                              maxAspectRatio=maxAspectRatio, minScore=minScore,
+                                              edgeMinMag=edgeMinMag, edgeMergeThr=edgeMergeThr,
+                                              clusterMinMag=clusterMinMag,
+                                              alpha=alpha, beta=beta, eta=eta,
+                                              kappa=kappa, gamma=gamma)
+
     prop_boxes, scores = edge_boxes.getBoundingBoxes(edges, orient_map)
 
     return (prop_boxes, scores)

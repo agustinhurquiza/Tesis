@@ -58,15 +58,25 @@ def parser():
 
 
 def main():
-    IGNORAR = 0.8 # TUNING Elimina las boundingboxes de gran tamaño.
     IOUT = 0.5 # TUNING iou para metricas.
     KRECALL = 100 # TUNING cantidad de propuestas que se concidera.
     NCOLS, NFILS = 224, 224
     OUTSIZE = 300
     INSIZE = 512
     MODEL_EDGE = 'bin/bing-model.yml.gz'
-    MAX_BOXS = 1000
-    MIN_SCORE = 0.01
+
+    maxBoxes = 1000
+    minScore = 0.07
+    sminBoxArea = [1, 100, 1000, 10000]
+    smaxAspectRatio = [2, 3, 4]
+    sedgeMinMag = [1e-08, 1e-07, 1e-06, 1e-06, 1e-05, 1e-04, 1e-03, 1e-02, 1e-01]
+    sedgeMergeThr = [1e-06, 1e-05, 1e-04, 1e-03, 1e-02, 1e-01, 2e-01, 3e-01, 4e-01, 5e-01]
+    sclusterMinMag = [1e-06, 1e-05, 1e-04, 1e-03, 1e-02, 1e-01, 2e-01, 3e-01, 4e-01, 5e-01]
+    salpha = [i for i in np.arange(0, 1.06, 0.5)]
+    sbeta = [i for i in np.arange(0, 1.06, 0.05)]
+    seta = [i for i in np.arange(0, 1.06, 0.05)]
+    skappa = [i for i in np.arange(0, 4.5, 0.5)]
+    sgamma = [i for i in np.arange(0, 4.5, 0.5)]
 
     args = parser()
     FILEWORD = args.fword
@@ -90,80 +100,59 @@ def main():
     for k,v in unseenJson.items():
         unseenNames.append(v)
         unseenKeys.append(k)
-    
+
     unseen = [(k, words[k]) for k in unseenKeys]
 
-    allBoundingBoxes = BoundingBoxes()
-    BoundingBoxesK = BoundingBoxes()
+    for minBoxArea in sminBoxArea:
+      for maxAspectRatio in smaxAspectRatio:
+          for edgeMinMag in sedgeMinMag:
+            for edgeMergeThr in sedgeMergeThr:
+              for clusterMinMag in sclusterMinMag:
+                for alpha in salpha:
+                  for beta in sbeta:
+                    for eta in seta:
+                      for kappa in skappa:
+                        for gamma in sgamma:
+                            print('\n Args:', maxBoxes, minBoxArea, maxAspectRatio,
+                                  minScore, edgeMinMag, edgeMergeThr, clusterMinMag,
+                                  alpha, beta, eta, kappa, gamma,'\n')
 
-    numgrundtruths = 0
-    numdetections = 0
-    fp = 0
-    tp = 0
-    my_num = 0
-    num_img = 0
-    for nimg, img in enumerate(glob(DIRTEST + "*")):
-        #print("Imagnes procesadas: ", nimg)
-        nomb = img.split('/')[-1]
-        img = cv2.imread(img)
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        tam = img.shape[0] * img.shape[1]
+                            per_img = [0] * 10
+                            for nimg, img in enumerate(glob(DIRTEST + "*")):
+                                nomb = img.split('/')[-1]
+                                img = cv2.imread(img)
+                                img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                                if nimg == 10:
+                                    break
 
-        # Extrae los bb true para la imagen elegida.
-        try:
-            boxs_t = list(filter(lambda x: x['img_name'] == nomb, boxs))[0]['boxs']
-        except:
-            #print("continue")
-            continue
-        
-        num_img += 1
-        
-        for (k, b) in enumerate(boxs_t):
-            numgrundtruths += 1
+                                # Extrae los bb true para la imagen elegida.
+                                try:
+                                    boxs_t = list(filter(lambda x: x['img_name'] == nomb, boxs))[0]['boxs']
+                                except:
+                                    continue
 
-        propuestas, score = extract_boxes_edges(edge_detection, img, MAX_BOXS)
-        indexs = [i for i, s in enumerate(score) if s > MIN_SCORE]
-        propuestas = propuestas[indexs]
-        propuestas = [procesar(r) for r in propuestas]
-        #propuestas = [r for r in propuestas if area(r) < (IGNORAR*tam)]
-        propuestas = np.array(propuestas)
-        
-        my = 0
-        for b in boxs_t:
-            for bb in propuestas:
-                if iou(bb, b['box']) >= 0.5:
-                    my+=1
-        #print('----------------------------', nomb)
-        print(my, len(boxs_t), len(propuestas))
-        #print('----------------------------')
+                                propuestas, score = extract_boxes_edges(edge_detection, img,
+                                                                        maxBoxes, minBoxArea,
+                                                                        maxAspectRatio,
+                                                                        minScore, edgeMinMag,
+                                                                        edgeMergeThr, clusterMinMag,
+                                                                        alpha, beta, eta, kappa, gamma)
 
-        boxs_p = predictBox(img, propuestas, unseen, model, vgg16, NCOLS=NCOLS, NFILS=NFILS)
-        #print('Luego de: ', len(boxs_p))
-        
-        flags = [[i['class'], 0, 0] for i in boxs_t]
-        for k, b in enumerate(boxs_p):
-            numdetections += 1
+                                propuestas = [procesar(r) for r in propuestas]
+                                propuestas = np.array(propuestas)
 
-            ious = [iou(b[0], bt['box']) for bt in boxs_t]
+                                flgas = [0] * len(boxs_t)
+                                for i, b in enumerate(boxs_t):
+                                    for bb in propuestas:
+                                        if iou(bb, b['box']) >= 0.5:
+                                            flgas[i] = flgas[i] + 1
 
-            for n, io in enumerate(ious):
-                if io < 0.5:
-                    my_num += 1
-                else:
-                    if int(boxs_t[n]['class']) == int(unseenKeys[b[1]]):
-                        flags[n][1] = flags[n][1] + 1
-                        tp += 1
-                    else:
-                        flags[n][2] = flags[n][2] + 1
-                        fp += 1
-        #print(flags)
+                                print(nomb, flags)
+                                if all(flgas) > 0:
+                                    per_img[nimg] = True
 
-    print('Numero de imagenes', num_img)
-    print('Fp: ', fp)
-    print('Tp: ', tp)
-    print('MY: ', my_num)
-    print('N detections:', numdetections)
-    print('N grundtruths: ', numgrundtruths)
+                            if all(per_img):
+                                print('Este modelo puede ser usado')
 
 if __name__ == "__main__":
     main()
