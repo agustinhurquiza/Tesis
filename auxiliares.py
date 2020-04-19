@@ -38,7 +38,7 @@ def extract_boxes_edges(edge_detection, img, MAX_BOXS, alpha=0.5, beta=0.5):
         Returns:
             (scores, boxs): Propuetas encontradas y sus respectivo scores.
     """
-    rgb_im = cv.cvtColor(img, cv.COLOR_BGR2RGB)
+    rgb_im = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     edges = edge_detection.detectEdges(np.float32(rgb_im) / 255.0)
 
     # Get the edges

@@ -16,7 +16,7 @@ import numpy as np
 from random import randint
 from sklearn.preprocessing import normalize
 from keras.applications.vgg16 import VGG16
-from auxiliares import save, iou, area, procesar, extract_boxes_edges
+from auxiliares import save, iou, procesar, extract_boxes_edges
 
 
 def appendValue(X, Y, box, cls, img, model, w2vec):
