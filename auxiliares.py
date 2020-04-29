@@ -4,6 +4,7 @@ import cv2
 from scipy.spatial.distance import cosine
 from sklearn.preprocessing import normalize
 from nms.nms import boxes
+import timeout_decorator
 
 def save(filename, mat):
     """ saves data in binary format
@@ -26,10 +27,9 @@ def load(filename):
     """
     return sio.loadmat(filename, appendmat=False, squeeze_me=True)['data']
 
-
+@timeout_decorator.timeout(3, use_signals=False)
 def extract_boxes_edges(edge_detection, rgb_im, maxBoxes, minBoxArea, maxAspectRatio, minScore,
-                        edgeMinMag, edgeMergeThr, clusterMinMag, alpha, beta, eta, kappa, gamma)
-):
+                        edgeMinMag, edgeMergeThr, clusterMinMag, alpha, beta, eta, kappa, gamma):
     """ Extrae las propuestas de objetos en una imagen utilizando edge boxs.
         Args:
             edge_detection (model): Modelo de edge detection. Ver cv2.ximgproc.
