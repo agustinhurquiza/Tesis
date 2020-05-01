@@ -24,7 +24,7 @@ from Evaluator import *
 from glob import glob
 from keras.applications.vgg16 import VGG16
 from model import ModelBase
-from auxiliares import area, predictBox, procesar, iou, save, extract_boxes_edges
+from auxiliares import predictBox, procesar, iou, save, extract_boxes_edges
 
 
 def parser():
@@ -73,7 +73,20 @@ def main():
     DIRTEST = args.dtest
     FILEBOXT = args.fboxt
     FILEMODEL = args.fmodel
-
+    
+    maxBoxes = 10000
+    minBoxArea =  1000
+    maxAspectRatio = 4
+    minScore = 0.05
+    edgeMinMag = 0.001
+    edgeMergeThr = 0.1
+    clusterMinMag = 1e-05
+    alpha = 0.6
+    beta = 1.0
+    eta = 0.1
+    kappa = 0.25
+    gamma = 1.5
+    
     boxs = json.load(open(FILEBOXT))
     unseenName = json.load(open(FILEUNSEEN))
     words = json.load(open(FILEWORD))
@@ -113,9 +126,13 @@ def main():
             allBoundingBoxes.addBoundingBox(bb)
             BoundingBoxesK.addBoundingBox(bb)
 
-        propuestas, score = extract_boxes_edges(edge_detection, img, MAX_BOXS)
-        indexs = [i for i, s in enumerate(score) if s > 0.07]
-        propuestas = propuestas[indexs]
+        propuestas, score =  extract_boxes_edges(edge_detection, img,
+                                                 maxBoxes=maxBoxes, minBoxArea=minBoxArea,
+                                                 maxAspectRatio=maxAspectRatio,
+                                                 minScore=minScore, edgeMinMag=edgeMinMag,
+                                                 edgeMergeThr=edgeMergeThr, clusterMinMag=clusterMinMag,
+                                                 alpha=alpha, beta=beta, eta=eta, kappa=kappa, gamma=gamma)
+
         propuestas = [procesar(r) for r in propuestas]
         propuestas = np.array(propuestas)
 
